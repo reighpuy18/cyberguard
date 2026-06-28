@@ -72,7 +72,7 @@ const HomeScene = {
                     if (!game.getFlag('tv_documentary_watched')) {
                         game.loadScene('materiedukasi');
                     } else if (!game.getFlag('tv_news_watched')) {
-                        game.loadScene('tvnews');
+                        game.loadScene('materikedua');
                     }
                     // If both watched, do nothing (path continues to to_home)
                 } else {
@@ -366,8 +366,8 @@ const HomeScene = {
         });
 
         const channels = [
-            { id: 'materiedukasi', label: 'Video Edukasi Phishing', desc: 'Phishing, Spearphishing', icon: '🎬' }
-            // { id: 'tvnews', label: 'RTV Drenthe', desc: 'Regionaal nieuws', icon: '📺' }
+            { id: 'materiedukasi', label: 'Video Edukasi Phishing', desc: 'Phishing, Spear phishing', icon: '🎬' },
+            // { id: 'materikedua', label: 'Video Edukasi 2', desc: 'Video Edukasi 2', icon: '🎬' }
         ];
 
         const card = document.createElement('div');
@@ -379,7 +379,7 @@ const HomeScene = {
         });
 
         const title = document.createElement('div');
-        title.textContent = 'Pilih Topik';
+        title.textContent = 'Pilih Topik Materi';
         Object.assign(title.style, {
             color: '#e0e0e0', fontSize: '15px', fontWeight: 'bold',
             textAlign: 'center', marginBottom: '18px', letterSpacing: '2px'
@@ -412,6 +412,14 @@ const HomeScene = {
             });
             card.appendChild(btn);
         });
+
+        const subtitle = document.createElement('div');
+        subtitle.textContent = 'Materi lainnya sedang dalam tahap pengembangan.';
+        Object.assign(subtitle.style, {
+            color: '#e0e0e0', fontSize: '12px', fontWeight: 'bold',
+            textAlign: 'center', marginBottom: '5px'
+        });
+        card.appendChild(subtitle);
 
         // Cancel / back button
         const cancel = document.createElement('button');

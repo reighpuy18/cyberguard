@@ -2,7 +2,7 @@ const MateriEdukasiScene = {
     id: 'materiedukasi',
     name: 'Materi Edukasi',
 
-    background: 'assets/images/scenes/materi_img/slied1.png',
+    background: 'assets/images/scenes/materi_img/slide.png',
     backgroundColor: '#000000',
 
     description: 'Tonton video edukasi mengenai phishing dan sebagainya.',
@@ -1070,11 +1070,11 @@ const MateriEdukasiScene = {
             {
                 duration: 10000,
                 sound: 'impact',
-                voice: { text: 'Berbeda dengan phishing biasa, spear-phishing merupakan serangan yang menargetkan orang tertentu. Pelaku biasanya sudah mengetahui sebagian informasi mengenai korbannya sehingga pesan yang dikirim terlihat lebih meyakinkan dan sulit dikenali.', speaker: 'Documentary' },
+                voice: { text: 'Berbeda dengan phishing biasa, Spear Phishing merupakan serangan yang menargetkan orang tertentu. Pelaku biasanya sudah mengetahui sebagian informasi mengenai korbannya sehingga pesan yang dikirim terlihat lebih meyakinkan dan sulit dikenali.', speaker: 'Documentary' },
                 content: `
                     <div class="matedukasi-bg" style="background-image: url('assets/images/materi_img/slide6.png'); animation-duration: 14s;"></div>
                     <div class="matedukasi-text-overlay">
-                        <p>Berbeda dengan phishing biasa, spear-phishing merupakan serangan yang menargetkan orang tertentu.</p>
+                        <p>Berbeda dengan phishing biasa, Spear Phishing merupakan serangan yang menargetkan orang tertentu.</p>
                         <p>Pelaku biasanya sudah mengetahui sebagian informasi mengenai korbannya sehingga pesan yang dikirim terlihat lebih meyakinkan dan sulit dikenali.</p>
                     </div>
                 `
@@ -1082,11 +1082,11 @@ const MateriEdukasiScene = {
             {
                 duration: 10000,
                 sound: 'impact',
-                voice: { text: 'Dalam spear-phishing, pelaku dapat menggunakan nama korban, tempat bekerja, sekolah, teman, bahkan aktivitas di media sosial untuk membangun kepercayaan. Karena terlihat sangat nyata, korban sering kali tidak menyadari bahwa dirinya sedang menjadi sasaran penipuan.', speaker: 'Documentary' },
+                voice: { text: 'Dalam Spear Phishing, pelaku dapat menggunakan nama korban, tempat bekerja, sekolah, teman, bahkan aktivitas di media sosial untuk membangun kepercayaan. Karena terlihat sangat nyata, korban sering kali tidak menyadari bahwa dirinya sedang menjadi sasaran penipuan.', speaker: 'Documentary' },
                 content: `
                     <div class="matedukasi-bg" style="background-image: url('assets/images/materi_img/slide7.png'); animation-duration: 14s;"></div>
                     <div class="matedukasi-text-overlay">
-                        <p>Dalam spear-phishing, pelaku dapat menggunakan nama korban, tempat bekerja, sekolah, teman, bahkan aktivitas di media sosial untuk membangun kepercayaan.</p>
+                        <p>Dalam Spear Phishing, pelaku dapat menggunakan nama korban, tempat bekerja, sekolah, teman, bahkan aktivitas di media sosial untuk membangun kepercayaan.</p>
                         <p>Karena terlihat sangat nyata, korban sering kali tidak menyadari bahwa dirinya sedang menjadi sasaran penipuan.</p>
                     </div>
                 `
@@ -1120,12 +1120,11 @@ const MateriEdukasiScene = {
                 voice: { text: 'Sekarang kamu telah memahami dasar-dasar phishing dan Spear Phishing. Selanjutnya, kamu akan mencoba mendeteksi berbagai ancaman melalui simulasi Point-and-Click. Temukan setiap tanda yang mencurigakan dan buktikan bahwa kamu siap menjadi seorang Cyber Guard.', speaker: 'Documentary' },
                 content: `
                     <div class="matedukasi-bg" style="background-image: url('assets/images/materi_img/slide10.png'); animation-direction: reverse;"></div>
-                    <div class="matedukasi-text-overlay">Sekarang kamu telah memahami dasar-dasar phishing dan Spear Phishing. Selanjutnya, kamu akan mencoba mendeteksi berbagai ancaman melalui simulasi Point-and-Click.</div>
-                    <div class="matedukasi-text-overlay">Temukan setiap tanda yang mencurigakan dan buktikan bahwa kamu siap menjadi seorang Cyber Guard.</div>
+                    <div class="matedukasi-text-overlay">Sekarang kamu telah memahami dasar-dasar phishing dan Spear Phishing. Selanjutnya, kamu akan mencoba mendeteksi berbagai ancaman melalui simulasi Point-and-Click. Temukan setiap tanda yang mencurigakan dan buktikan bahwa kamu siap menjadi seorang Cyber Guard.</div>
                     <div class="matedukasi-title-card">
-                        <h1>CyberGuard: Spearphishing</h1>
                         <span class="matedukasi-accent"></span>
-                        <h2>Mulai Simulasi</h2>
+                        <h1>Yuk Mulai Simulasi!</h1>
+                        <span class="matedukasi-accent"></span>
                     </div>
                 `
             }

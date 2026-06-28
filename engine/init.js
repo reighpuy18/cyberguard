@@ -56,7 +56,6 @@ function initGame() {
     game.registerScene(IntroScene);
     game.registerScene(HomeScene);
     game.registerScene(MateriEdukasiScene);
-    game.registerScene(TvnewsScene);
     game.registerScene(SimulationScene);
     game.registerScene(SocialMediaPhishingSimulation);
     game.registerScene(EmailPhishingSimulation);

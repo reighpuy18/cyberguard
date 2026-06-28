@@ -1,8 +1,3 @@
-/**
- * CyberQuest - Core Game Engine
- * Sierra-style adventure game engine
- */
-
 // Suppress console.log in production (non-localhost) builds.
 // All debug logging is still available on localhost / 127.0.0.1.
 const DEV_MODE = typeof window !== 'undefined' &&
@@ -81,7 +76,7 @@ function addInteractionHandler(el, handler) {
     el.addEventListener('touchend', handler);
 }
 
-class CyberQuestEngine {
+class CyberGuardEngine {
     /**
      * @param {Object} [deps] - Optional dependency overrides for testing
      * @param {Object} [deps.voiceManager]
@@ -1646,7 +1641,7 @@ class CyberQuestEngine {
 
     // Save/Load
     /**
-     * Silent autosave to the dedicated autosave slot ('cyberquest_autosave').
+     * Silent autosave to the dedicated autosave slot ('cyberguard_autosave').
      * Called after every scene transition, post-onEnter, so all entry flags are captured.
      */
     _autoSave() {
@@ -1662,7 +1657,7 @@ class CyberQuestEngine {
                 voiceEnabled: this.voiceEnabled,
                 timestamp: new Date().toISOString()
             };
-            this._storage.setItem('cyberquest_autosave', JSON.stringify(saveData));
+            this._storage.setItem('cyberguard_autosave', JSON.stringify(saveData));
             console.log(`[Autosave] scene=${this.currentScene}, flags=${Object.keys(this.gameState.flags).length}, quests=${this.gameState.activeQuests.length}`);
         } catch (err) {
             console.error('[Autosave] Failed:', err);
@@ -1707,13 +1702,13 @@ class CyberQuestEngine {
             let raw;
             if (!slot || slot < 1) {
                 // Load from dedicated autosave key; fall back to legacy key
-                raw = this._storage ? this._storage.getItem('cyberquest_autosave') : null;
-                if (!raw) raw = this._storage ? this._storage.getItem('cyberquest_save') : null;
+                raw = this._storage ? this._storage.getItem('cyberguard_autosave') : null;
+                if (!raw) raw = this._storage ? this._storage.getItem('cyberguard_save') : null;
             } else {
                 const key = this._getSaveKey(slot);
                 raw = this._storage ? this._storage.getItem(key) : null;
                 if (!raw && slot === 1) {
-                    raw = this._storage ? this._storage.getItem('cyberquest_save') : null;
+                    raw = this._storage ? this._storage.getItem('cyberguard_save') : null;
                 }
             }
             if (!raw) {
@@ -1776,14 +1771,14 @@ class CyberQuestEngine {
      * @returns {string}
      */
     _getSaveKey(slot) {
-        if (!slot || slot < 1) return 'cyberquest_save';
-        return `cyberquest_save_${slot}`;
+        if (!slot || slot < 1) return 'cyberguard_save';
+        return `cyberguard_save_${slot}`;
     }
 
     /** Read persisted settings from localStorage and merge over defaults. */
     _loadSettings() {
         try {
-            const raw = this._storage ? this._storage.getItem('cyberquest_settings') : null;
+            const raw = this._storage ? this._storage.getItem('cyberguard_settings') : null;
             if (raw) {
                 const saved = JSON.parse(raw);
                 if (typeof saved.textSpeed === 'number') this.settings.textSpeed = saved.textSpeed;
@@ -1801,7 +1796,7 @@ class CyberQuestEngine {
     _saveSettings() {
         try {
             if (this._storage) {
-                this._storage.setItem('cyberquest_settings', JSON.stringify(this.settings));
+                this._storage.setItem('cyberguard_settings', JSON.stringify(this.settings));
             }
         } catch (e) {
             console.warn('[Settings] Failed to save settings:', e);
@@ -1841,7 +1836,7 @@ class CyberQuestEngine {
         // ── Autosave slot (slot 0) ──────────────────────────────────────────────
         let autoSaveCard;
         const autoRaw = this._storage
-            ? (this._storage.getItem('cyberquest_autosave') || this._storage.getItem('cyberquest_save'))
+            ? (this._storage.getItem('cyberguard_autosave') || this._storage.getItem('cyberguard_save'))
             : null;
         if (autoRaw) {
             try {
@@ -1890,7 +1885,7 @@ class CyberQuestEngine {
                 }
             } else {
                 // Check legacy key for slot 1 migration
-                const legacyRaw = i === 1 && this._storage ? this._storage.getItem('cyberquest_save') : null;
+                const legacyRaw = i === 1 && this._storage ? this._storage.getItem('cyberguard_save') : null;
                 if (legacyRaw) {
                     try {
                         const d = JSON.parse(legacyRaw);
@@ -1983,7 +1978,7 @@ class CyberQuestEngine {
                 if (confirm(`Delete Slot ${slot} save? This cannot be undone.`)) {
                     this._storage?.removeItem(key);
                     // Also remove legacy key if slot 1
-                    if (slot === 1) this._storage?.removeItem('cyberquest_save');
+                    if (slot === 1) this._storage?.removeItem('cyberguard_save');
                     modal.remove();
                     this.openSaveSlotModal(mode); // refresh
                 }
@@ -3112,7 +3107,7 @@ class CyberQuestEngine {
         if (debugPanel) debugPanel.remove();
 
         this.initialized = false;
-        console.log('CyberQuest Engine destroyed');
+        console.log('CyberGuard Engine destroyed');
     }
 
 
@@ -3120,4 +3115,4 @@ class CyberQuestEngine {
 }
 
 // Export for use
-window.CyberQuestEngine = CyberQuestEngine;
+window.CyberGuardEngine = CyberGuardEngine;

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-GitHub Webhook Listener for CyberQuest auto-deploy.
+GitHub Webhook Listener for CyberGuard auto-deploy.
 
 Listens for push events from GitHub and runs `git pull` on the local repo.
 Uses only Python stdlib — no dependencies needed.
@@ -35,7 +35,7 @@ PULL_COOLDOWN_SECONDS: int = 30  # minimum seconds between git pulls
 # Configuration defaults
 # ---------------------------------------------------------------------------
 DEFAULT_PORT = 9000
-DEFAULT_REPO = "/var/www/CyberQuest"
+DEFAULT_REPO = "/var/www/CyberGuard"
 DEFAULT_BRANCH = "main"
 
 logging.basicConfig(
@@ -111,7 +111,7 @@ class WebhookHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "text/plain")
         self.end_headers()
-        self.wfile.write(b"CyberQuest webhook listener OK\n")
+        self.wfile.write(b"CyberGuard webhook listener OK\n")
 
     def do_POST(self):
         content_length = int(self.headers.get("Content-Length", 0))

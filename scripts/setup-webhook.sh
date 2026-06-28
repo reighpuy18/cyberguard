@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# CyberQuest Webhook Auto-Deploy — Setup Script
+# CyberGuard Webhook Auto-Deploy — Setup Script
 #
 # Run on your Ubuntu server as root (or with sudo):
 #   sudo bash scripts/setup-webhook.sh
@@ -14,13 +14,13 @@
 #
 set -euo pipefail
 
-REPO_DIR="/var/www/CyberQuest"
-SERVICE_NAME="cyberquest-webhook"
+REPO_DIR="/var/www/CyberGuard"
+SERVICE_NAME="cyberguard-webhook"
 SERVICE_FILE="$REPO_DIR/scripts/$SERVICE_NAME.service"
 APACHE_CONF="$REPO_DIR/scripts/apache-webhook.conf"
-ENV_FILE="/etc/cyberquest-webhook.env"
+ENV_FILE="/etc/cyberguard-webhook.env"
 
-echo "=== CyberQuest Webhook Setup ==="
+echo "=== CyberGuard Webhook Setup ==="
 echo ""
 
 # ---- 1. Repo ownership ----
@@ -59,9 +59,9 @@ echo "[4/5] Configuring Apache …"
 a2enmod proxy proxy_http > /dev/null 2>&1 || true
 
 # Install the webhook proxy config if not already present
-WEBHOOK_CONF="/etc/apache2/conf-available/cyberquest-webhook.conf"
+WEBHOOK_CONF="/etc/apache2/conf-available/cyberguard-webhook.conf"
 cp "$APACHE_CONF" "$WEBHOOK_CONF"
-a2enconf cyberquest-webhook > /dev/null 2>&1 || true
+a2enconf cyberguard-webhook > /dev/null 2>&1 || true
 systemctl reload apache2
 echo "  ✓ Apache proxy /webhook → 127.0.0.1:9000"
 echo ""
@@ -76,7 +76,7 @@ echo "════════════════════════�
 echo ""
 echo "  Next: configure the webhook on GitHub:"
 echo ""
-echo "  1. Go to: https://github.com/ReinVelt/CyberQuest/settings/hooks/new"
+echo "  1. Go to: https://github.com/ReinVelt/CyberGuard/settings/hooks/new"
 echo "  2. Payload URL:  https://YOUR-SERVER/webhook"
 echo "  3. Content type: application/json"
 echo "  4. Secret:       $SECRET"

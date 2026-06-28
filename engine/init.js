@@ -39,7 +39,7 @@ function showTitleScreen() {
     titleScreen.classList.add('visible');
 
     // Check for saved game (autosave slot takes priority over legacy slot)
-    const savedGame = localStorage.getItem('cyberquest_autosave') || localStorage.getItem('cyberquest_save');
+    const savedGame = localStorage.getItem('cyberguard_autosave') || localStorage.getItem('cyberguard_save');
     if (savedGame) {
         document.getElementById('btn-continue').disabled = false;
     }
@@ -47,7 +47,7 @@ function showTitleScreen() {
 
 function initGame() {
     // Initialize game engine
-    game = new CyberQuestEngine();
+    game = new CyberGuardEngine();
 
     // Make game globally accessible
     window.game = game;
@@ -70,8 +70,8 @@ function startNewGame() {
     titleScreen.classList.remove('visible');
 
     // Clear any existing save
-    localStorage.removeItem('cyberquest_autosave');
-    localStorage.removeItem('cyberquest_save');
+    localStorage.removeItem('cyberguard_autosave');
+    localStorage.removeItem('cyberguard_save');
 
     // Clear URL hash so loadGameState() inside init() does not
     // race against our explicit loadScene('intro') call below.
@@ -104,8 +104,8 @@ function startInteractiveMovie() {
     titleScreen.classList.remove('visible');
 
     // Clear any existing save so movie always runs from the start
-    localStorage.removeItem('cyberquest_autosave');
-    localStorage.removeItem('cyberquest_save');
+    localStorage.removeItem('cyberguard_autosave');
+    localStorage.removeItem('cyberguard_save');
 
     window.location.hash = '';
 
@@ -135,9 +135,9 @@ function startInteractiveMovie() {
 function showAbout() {
     // Render changelog dynamically from engine/changelog.js
     const container = document.getElementById('about-changelog');
-    if (container && typeof CYBERQUEST_CHANGELOG !== 'undefined' && !container._rendered) {
+    if (container && typeof CYBERGUARD_CHANGELOG !== 'undefined' && !container._rendered) {
         container._rendered = true;
-        container.innerHTML = CYBERQUEST_CHANGELOG.map((entry, i) => {
+        container.innerHTML = CYBERGUARD_CHANGELOG.map((entry, i) => {
             const versionColor = i === 0 ? '#00ff88' : '#777';
             const itemColor = i === 0 ? '#00cc55' : '';
             const itemStyle = itemColor ? ` style="color:${itemColor}"` : '';

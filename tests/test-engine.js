@@ -1,8 +1,3 @@
-/**
- * CyberQuest Engine Test Suite
- * Lightweight test framework + comprehensive unit tests
- */
-
 // ── Minimal Test Framework ──────────────────────────────────────────
 
 const TestRunner = {
@@ -125,7 +120,7 @@ function createTestEngine(overrides = {}) {
         ChatInterface: null,
         ...overrides
     };
-    const engine = new CyberQuestEngine(defaultDeps);
+    const engine = new CyberGuardEngine(defaultDeps);
     engine.init();
     return engine;
 }
@@ -143,7 +138,7 @@ TestRunner.suite('ENGINE_CONFIG Constants', (assert) => {
 });
 
 // 2. Constructor & Initialization
-TestRunner.suite('CyberQuestEngine Constructor', (assert) => {
+TestRunner.suite('CyberGuardEngine Constructor', (assert) => {
     const engine = createTestEngine();
     assert.ok(engine.initialized, 'Engine is initialized');
     assert.equal(engine.currentScene, null, 'No scene loaded initially');
@@ -160,7 +155,7 @@ TestRunner.suite('CyberQuestEngine Constructor', (assert) => {
 TestRunner.suite('Dependency Injection', (assert) => {
     const mockStorage = createMockStorage();
     // Explicitly pass null for each component to verify null suppresses initialization
-    const engine = new CyberQuestEngine({
+    const engine = new CyberGuardEngine({
         storage: mockStorage,
         PlayerCharacter: null,
         PasswordPuzzle: null,
@@ -357,10 +352,10 @@ TestRunner.suite('Save/Load System', (assert) => {
     // Save
     const saved = engine.saveGame(true);
     assert.ok(saved, 'saveGame returns true on success');
-    assert.ok(mockStorage.getItem('cyberquest_save'), 'Save data written to storage');
+    assert.ok(mockStorage.getItem('cyberguard_save'), 'Save data written to storage');
 
     // Verify save data structure
-    const saveData = JSON.parse(mockStorage.getItem('cyberquest_save'));
+    const saveData = JSON.parse(mockStorage.getItem('cyberguard_save'));
     assert.equal(saveData.currentScene, 'mancave', 'Scene saved');
     assert.equal(saveData.inventory.length, 1, 'Inventory saved');
     assert.equal(saveData.gameState.storyPart, 5, 'Story part in save data');
@@ -397,7 +392,7 @@ TestRunner.suite('Save/Load System', (assert) => {
 // 11. Save/Load with corrupted data
 TestRunner.suite('Save/Load Error Handling', (assert) => {
     const mockStorage = createMockStorage();
-    mockStorage.setItem('cyberquest_save', 'NOT VALID JSON{{{');
+    mockStorage.setItem('cyberguard_save', 'NOT VALID JSON{{{');
 
     const engine = createTestEngine({ storage: mockStorage });
 
@@ -405,7 +400,7 @@ TestRunner.suite('Save/Load Error Handling', (assert) => {
     assert.ok(!result1, 'Corrupted data returns false');
 
     // Missing fields
-    mockStorage.setItem('cyberquest_save', JSON.stringify({ gameState: {} }));
+    mockStorage.setItem('cyberguard_save', JSON.stringify({ gameState: {} }));
     const result2 = engine.loadGame();
     assert.ok(result2, 'Partial data loads successfully');
 

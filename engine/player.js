@@ -1,8 +1,3 @@
-/**
- * CyberQuest - Player Character System
- * Handles Ryan's movement, animations, and thoughts
- */
-
 class PlayerCharacter {
     constructor(game) {
         this.game = game;

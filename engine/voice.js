@@ -1,9 +1,3 @@
-/**
- * CyberQuest - Voice System
- * Text-to-speech with multiple character voices
- * Falls back to visual text display when TTS unavailable
- */
-
 class VoiceManager {
     constructor() {
         this.synth = (typeof window !== 'undefined' && window.speechSynthesis) ? window.speechSynthesis : null;
@@ -110,7 +104,7 @@ class VoiceManager {
                     setTimeout(tryLoad, 500);
                 } else {
                     console.log('════════════════════════════════════════════════════════');
-                    console.log('ℹ️  CyberQuest is running in TEXT MODE');
+                    console.log('ℹ️  CyberGuard is running in TEXT MODE');
                     console.log('════════════════════════════════════════════════════════');
                     console.log('No browser TTS voices detected (this is normal on Linux).');
                     console.log('');

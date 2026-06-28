@@ -1,0 +1,28 @@
+[Unit]
+Description=CyberGuard GitHub Webhook Listener
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/CyberGuard
+ExecStart=/usr/bin/python3 /var/www/CyberGuard/scripts/webhook-pull.py \
+    --port 9000 \
+    --repo /var/www/CyberGuard \
+    --branch main
+EnvironmentFile=-/etc/cyberguard-webhook.env
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cyberguard-webhook
+
+# Hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/www/CyberGuard
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

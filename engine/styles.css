@@ -1,0 +1,2771 @@
+/**
+ * CyberQuest - Main Stylesheet
+ * Sierra-style adventure game with responsive design
+ */
+
+/* CSS Variables */
+:root {
+    --color-primary: #1a1a2e;
+    --color-secondary: #16213e;
+    --color-accent: #0f3460;
+    --color-highlight: #342fb6;
+    --color-text: #eaeaea;
+    --color-text-dim: #a0a0a0;
+    --color-success: #4ecca3;
+    --color-warning: #ffc107;
+    --color-error: #ff6b6b;
+    --color-purple: #9741fa;
+
+    --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --font-mono: 'Courier New', Courier, monospace;
+
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+
+    --z-scene: 1;
+    --z-hotspots: 10;
+    --z-ui: 100;
+    --z-dialogue: 200;
+    --z-puzzle: 300;
+    --z-notification: 400;
+}
+
+/* Reset & Base */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    height: 100%;
+    overflow: hidden;
+    animation: floatBG 15s ease-in-out infinite;
+}
+
+body {
+    font-family: var(--font-main);
+    background-color: #000;
+    color: var(--color-text);
+    line-height: 1.6;
+}
+
+/* Game Container — grid: top-bar | scene | bottom-bar */
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #000;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: 1fr;
+}
+
+/* Top toolbar — inventory, time, quests */
+#game-top-bar {
+    display: flex;
+    /* justify-content: space-between; */
+    justify-content: center;
+    align-items: center;
+    padding: 6px 12px;
+    background: linear-gradient(180deg, rgba(15, 15, 15, 0.95) 0%, rgba(9, 5, 11, 0.9) 100%);
+    z-index: var(--z-ui);
+}
+
+/* Bottom toolbar — game-menu buttons */
+#game-bottom-bar {
+    display: flex;
+    justify-content: center;
+    /* justify-content: flex-end; */
+    align-items: center;
+    padding: 6px 12px;
+    background: linear-gradient(0deg, rgba(7, 6, 7, 0.95) 0%, rgba(91, 89, 88, 0.9) 100%);
+    z-index: var(--z-ui);
+}
+
+/* Scene wrapper — fills the middle grid row, centres the 16:9 scene */
+#scene-wrapper {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    min-height: 0;
+    /* allow shrink inside grid */
+    background-color: #000;
+    /* letterbox bars */
+    container-type: size;
+    /* enable cq units for children */
+}
+
+/* Scene Container - largest 16:9 box that fits the wrapper, centred */
+#scene-container {
+    position: relative;
+    /*
+     * Explicit 16:9 sizing using container-query units.
+     * Width  = min(wrapper width, wrapper height × 16/9)
+     * Height = min(wrapper height, wrapper width × 9/16)
+     * This is mathematically exact and avoids reliance on
+     * aspect-ratio transfer through max-height (CSS Sizing L4).
+     */
+    width: min(100cqw, calc(100cqh / 9 * 16));
+    height: min(100cqh, calc(100cqw / 16 * 9));
+    z-index: var(--z-scene);
+    transition: opacity var(--transition-slow);
+    overflow: hidden;
+}
+
+#scene-container.fade-out {
+    opacity: 0;
+}
+
+#scene-container.fade-in {
+    opacity: 1;
+}
+
+/* ═══════════════════════════════════════════════════════
+ *  CINEMATIC SCENE TRANSITIONS — Hollywood thriller style
+ * ═══════════════════════════════════════════════════════ */
+#scene-transition-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 500;
+    pointer-events: none;
+    opacity: 0;
+}
+
+/* Black curtain */
+#scene-transition-overlay .trans-curtain {
+    position: absolute;
+    inset: 0;
+    background: #000;
+    opacity: 0;
+}
+
+/* Horizontal light sweep (anamorphic lens flare vibe) */
+#scene-transition-overlay .trans-sweep {
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(180, 210, 255, 0.06) 30%,
+            rgba(255, 255, 255, 0.12) 50%,
+            rgba(180, 210, 255, 0.06) 70%,
+            transparent 100%);
+    opacity: 0;
+}
+
+/* Film-flash — a brief bright blip */
+#scene-transition-overlay .trans-flash {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.08);
+    opacity: 0;
+}
+
+/* Active transition states ––––––––––––––––––––––––––– */
+
+/* Phase 1: fade to black + slight zoom-out on old scene */
+#scene-container.cine-out {
+    transition: transform 0.9s cubic-bezier(0.4, 0, 0.2, 1),
+        filter 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: scale(0.97);
+    filter: brightness(0.4) saturate(0.6);
+}
+
+#scene-transition-overlay.cine-out {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#scene-transition-overlay.cine-out .trans-curtain {
+    animation: cineCurtainIn 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+#scene-transition-overlay.cine-out .trans-flash {
+    animation: cineFlash 0.35s ease-out 0.7s forwards;
+}
+
+/* Phase 2: hold at black (sweep plays) */
+#scene-transition-overlay.cine-hold {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#scene-transition-overlay.cine-hold .trans-curtain {
+    opacity: 1;
+}
+
+#scene-transition-overlay.cine-hold .trans-sweep {
+    animation: cineSweep 0.6s ease-in-out forwards;
+}
+
+/* Phase 3: fade from black + slight zoom-in on new scene */
+#scene-container.cine-in {
+    transform: scale(1.03);
+    filter: brightness(1.15) saturate(1.2);
+    transition: none;
+}
+
+#scene-container.cine-in-play {
+    transition: transform 1.0s cubic-bezier(0.0, 0, 0.2, 1),
+        filter 1.0s cubic-bezier(0.0, 0, 0.2, 1);
+    transform: scale(1);
+    filter: brightness(1) saturate(1);
+}
+
+#scene-transition-overlay.cine-in {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#scene-transition-overlay.cine-in .trans-curtain {
+    animation: cineCurtainOut 1.0s cubic-bezier(0.0, 0, 0.2, 1) forwards;
+}
+
+/* Keyframes –––––––––––––––––––––––––––––––––––––––––– */
+@keyframes cineCurtainIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes cineCurtainOut {
+    0% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+@keyframes cineSweep {
+    0% {
+        left: -60%;
+        opacity: 0;
+    }
+
+    15% {
+        opacity: 1;
+    }
+
+    85% {
+        opacity: 1;
+    }
+
+    100% {
+        left: 120%;
+        opacity: 0;
+    }
+}
+
+@keyframes cineFlash {
+    0% {
+        opacity: 0;
+    }
+
+    30% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+#scene-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Use !important to survive shorthand resets from .scene-* classes */
+    background-size: 100% 100% !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+}
+
+#scene-hotspots {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: var(--z-hotspots);
+}
+
+#scene-characters {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* Hotspots */
+.hotspot {
+    position: absolute;
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    transition: all var(--transition-fast);
+}
+
+.hotspot:hover {
+    border-color: rgba(178, 74, 208, 0.6);
+    background-color: rgba(182, 69, 233, 0.17);
+    box-shadow: 0 0 20px rgba(233, 69, 96, 0.3);
+}
+
+/* Navigation hotspots - always visible with subtle indicator */
+.hotspot.hotspot-nav {
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Courier New', monospace;
+    font-size: clamp(10px, 1.2vw, 14px);
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 1px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.hotspot.hotspot-nav::before {
+    content: attr(data-tooltip);
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.hotspot.hotspot-nav:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(0, 0, 0, 0.5);
+    color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.15);
+}
+
+/* Hide the default ::after tooltip for nav hotspots since label is always shown */
+.hotspot.hotspot-nav[data-tooltip]:hover::after {
+    display: none;
+}
+
+/* Tool hotspots — visible icon overlays for hackable equipment */
+.hotspot.hotspot-tool {
+    border: 2px solid rgba(0, 255, 136, 0.35);
+    background: rgba(0, 0, 0, 0.45);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 4px;
+    transition: all 0.3s ease;
+    animation: tool-pulse 3s ease-in-out infinite;
+}
+
+.hotspot.hotspot-tool img {
+    width: 60%;
+    height: auto;
+    max-height: 60%;
+    object-fit: contain;
+    filter: drop-shadow(0 0 4px rgba(0, 255, 136, 0.5));
+    pointer-events: none;
+}
+
+.hotspot.hotspot-tool .tool-label {
+    font-family: 'Courier New', monospace;
+    font-size: clamp(8px, 1vw, 12px);
+    color: rgba(0, 255, 136, 0.85);
+    text-shadow: 0 0 6px rgba(0, 255, 136, 0.4);
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.hotspot.hotspot-tool:hover {
+    border-color: rgba(0, 255, 136, 0.8);
+    background: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 20px rgba(217, 175, 252, 0.849);
+    transform: scale(1.05);
+}
+
+.hotspot.hotspot-tool.tool-disabled {
+    border-color: rgba(255, 255, 255, 0.15);
+    opacity: 0.35;
+    animation: none;
+}
+
+.hotspot.hotspot-tool.tool-disabled:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: none;
+    transform: none;
+}
+
+.hotspot.hotspot-tool[data-tooltip]:hover::after {
+    display: none;
+}
+
+@keyframes tool-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 8px rgba(0, 255, 136, 0.15);
+    }
+
+    50% {
+        box-shadow: 0 0 16px rgba(0, 255, 136, 0.35);
+    }
+}
+
+.hotspot[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 12px;
+    background-color: var(--color-secondary);
+    color: var(--color-text);
+    border-radius: 4px;
+    font-size: 14px;
+    white-space: nowrap;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* UI Overlay */
+#ui-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: var(--z-ui);
+}
+
+#ui-overlay>* {
+    pointer-events: auto;
+}
+
+/* Dialogue Box */
+#dialogue-box {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 40px);
+    max-width: 800px;
+    background: linear-gradient(135deg, rgba(22, 33, 62, 0.60) 0%, rgba(26, 26, 46, 0.60) 100%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 2px solid rgba(15, 52, 96, 0.7);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    gap: 20px;
+    z-index: var(--z-dialogue);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+
+#dialogue-box.hidden {
+    display: none;
+}
+
+#dialogue-portrait {
+    width: 100px;
+    height: 100px;
+    flex-shrink: 0;
+    background: '../assets/images/characters/cygu.svg';
+    /* background-color: rgba(15, 52, 96, 0.5); */
+    background-size: contain;
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    border-radius: 8px;
+    border: 2px solid var(--color-highlight);
+    overflow: hidden;
+}
+
+#dialogue-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#dialogue-speaker {
+    font-weight: bold;
+    font-size: 18px;
+    color: var(--color-highlight);
+    margin-bottom: 8px;
+}
+
+#dialogue-text {
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--color-text);
+}
+
+#dialogue-continue {
+    position: absolute;
+    bottom: 8px;
+    right: 16px;
+    font-size: 12px;
+    color: var(--color-text-dim);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Inventory Bar — now lives in #game-top-bar (flow layout) */
+#inventory-bar {
+    position: relative;
+}
+
+#inventory-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%);
+    border: 2px solid var(--color-accent);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+#inventory-toggle:hover {
+    border-color: var(--color-highlight);
+}
+
+#inventory-toggle .icon {
+    font-size: 24px;
+}
+
+#inventory-toggle .label {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+#inventory-items {
+    margin-top: 10px;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%);
+    border: 2px solid var(--color-accent);
+    border-radius: 8px;
+    display: grid;
+    grid-template-columns: repeat(4, 60px);
+    gap: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+#inventory-items.hidden {
+    display: none;
+}
+
+.inventory-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px;
+    background-color: var(--color-accent);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.inventory-item:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(233, 69, 96, 0.3);
+}
+
+.inventory-item img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+.inventory-item .item-name {
+    font-size: 10px;
+    text-align: center;
+    margin-top: 4px;
+    color: var(--color-text-dim);
+}
+
+.inventory-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--color-text-dim);
+    font-style: italic;
+}
+
+/* Quest Log — now lives in #game-top-bar (flow layout) */
+#quest-log {
+    position: relative;
+}
+
+#quest-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%);
+    border: 2px solid var(--color-accent);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+#quest-toggle:hover {
+    border-color: var(--color-highlight);
+}
+
+#quest-toggle .icon {
+    font-size: 24px;
+}
+
+#quest-toggle .label {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+#quest-list {
+    position: absolute;
+    right: 0;
+    margin-top: 10px;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%);
+    border: 2px solid var(--color-accent);
+    border-radius: 8px;
+    min-width: 300px;
+    max-width: 400px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+#quest-list.hidden {
+    display: none;
+}
+
+.quest-item {
+    padding: 12px;
+    margin-bottom: 10px;
+    background-color: rgba(15, 52, 96, 0.5);
+    border-radius: 8px;
+    border-left: 4px solid var(--color-highlight);
+}
+
+.quest-item:last-child {
+    margin-bottom: 0;
+}
+
+.quest-name {
+    font-weight: bold;
+    font-size: 16px;
+    color: var(--color-highlight);
+    margin-bottom: 4px;
+}
+
+.quest-description {
+    font-size: 14px;
+    color: var(--color-text);
+    margin-bottom: 8px;
+}
+
+.quest-hint {
+    margin-top: 8px;
+}
+
+.quest-hint-btn {
+    padding: 4px 12px;
+    background-color: var(--color-accent);
+    border: none;
+    border-radius: 4px;
+    color: var(--color-text);
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.quest-hint-btn:hover {
+    opacity: 0.85;
+}
+
+.quest-hint-text {
+    font-size: 12px;
+    color: var(--color-warning);
+    padding: 8px;
+    margin-top: 6px;
+    background-color: rgba(255, 193, 7, 0.1);
+    border-radius: 4px;
+}
+
+.quest-hint-text.hidden {
+    display: none;
+}
+
+.quest-empty {
+    text-align: start;
+    color: var(--color-text-dim);
+    font-style: italic;
+}
+
+.quest-empty-desc {
+    font-size: 14px;
+    text-align: start;
+    color: #d3d2d2;
+}
+
+/* Game Menu — now lives in #game-bottom-bar (flow layout) */
+#game-menu {
+    display: flex;
+    gap: 10px;
+}
+
+#game-menu button {
+    padding: 10px 16px;
+    background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%);
+    border: 2px solid var(--color-accent);
+    border-radius: 8px;
+    color: var(--color-text);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+#game-menu button:hover {
+    border-color: var(--color-highlight);
+    background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-secondary) 100%);
+}
+
+#menu-voice {
+    min-width: 90px;
+}
+
+#menu-voice.muted {
+    opacity: 0.6;
+    border-color: var(--color-text-dim);
+}
+
+
+/* Pause overlay — covers the entire game */
+#pause-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    animation: pause-fade-in 0.2s ease-out;
+}
+
+#pause-overlay.hidden {
+    display: none;
+}
+
+@keyframes pause-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+#pause-content {
+    text-align: center;
+    user-select: none;
+    pointer-events: none;
+}
+
+#pause-icon {
+    font-size: 72px;
+    margin-bottom: 16px;
+    filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.5));
+}
+
+#pause-title {
+    font-family: Impact, 'Arial Black', sans-serif;
+    font-size: 56px;
+    color: #eaeaea;
+    letter-spacing: 12px;
+    text-shadow: 0 0 20px rgba(0, 255, 255, 0.5), 0 2px 8px rgba(0, 0, 0, 0.8);
+    margin-bottom: 12px;
+}
+
+#pause-hint {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--color-text-dim);
+    opacity: 0.8;
+    animation: pause-hint-blink 2s ease-in-out infinite;
+}
+
+@keyframes pause-hint-blink {
+
+    0%,
+    100% {
+        opacity: 0.8;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
+}
+
+/* Time Display — centred in #game-top-bar */
+#time-display {
+    display: flex;
+    gap: 20px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%);
+    border: 2px solid var(--color-accent);
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 16px;
+}
+
+#game-day {
+    color: var(--color-warning);
+}
+
+#game-time {
+    color: var(--color-success);
+}
+
+/* Puzzle Overlay */
+#puzzle-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--z-puzzle);
+}
+
+#puzzle-overlay.hidden {
+    display: none;
+}
+
+#puzzle-container {
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.puzzle {
+    background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%);
+    border: 2px solid var(--color-accent);
+    border-radius: 12px;
+    padding: 30px;
+}
+
+.puzzle h2 {
+    font-size: 24px;
+    color: var(--color-highlight);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.puzzle-description {
+    margin-bottom: 20px;
+    color: var(--color-text);
+}
+
+.encrypted-message {
+    padding: 20px;
+    background-color: var(--color-primary);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    word-break: break-all;
+    color: var(--color-success);
+    border: 1px solid var(--color-accent);
+}
+
+.puzzle-hint {
+    margin-bottom: 20px;
+}
+
+.puzzle-hint button {
+    padding: 8px 16px;
+    background-color: var(--color-accent);
+    border: none;
+    border-radius: 4px;
+    color: var(--color-text);
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.puzzle-hint p {
+    padding: 12px;
+    background-color: rgba(255, 193, 7, 0.1);
+    border-radius: 4px;
+    color: var(--color-warning);
+    font-size: 14px;
+}
+
+.puzzle-hint p.hidden {
+    display: none;
+}
+
+.puzzle-input {
+    margin-bottom: 20px;
+}
+
+.puzzle-input label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--color-text-dim);
+}
+
+.puzzle-input textarea,
+.puzzle-input input {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--color-primary);
+    border: 2px solid var(--color-accent);
+    border-radius: 8px;
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    resize: vertical;
+}
+
+.puzzle-input textarea:focus,
+.puzzle-input input:focus {
+    outline: none;
+    border-color: var(--color-highlight);
+}
+
+.puzzle-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.btn-primary {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--color-highlight) 0%, #c73e54 100%);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(233, 69, 96, 0.4);
+}
+
+.btn-secondary {
+    padding: 12px 24px;
+    background-color: var(--color-accent);
+    border: 2px solid var(--color-accent);
+    border-radius: 8px;
+    color: var(--color-text);
+    font-size: 16px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-secondary:hover {
+    background-color: var(--color-secondary);
+}
+
+/* Frequency Puzzle Specific */
+.frequency-display {
+    text-align: center;
+    font-size: 48px;
+    font-family: var(--font-mono);
+    color: var(--color-success);
+    margin-bottom: 20px;
+    padding: 20px;
+    background-color: var(--color-primary);
+    border-radius: 8px;
+    border: 2px solid var(--color-accent);
+}
+
+.frequency-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.frequency-controls button {
+    padding: 8px 16px;
+    background-color: var(--color-accent);
+    border: none;
+    border-radius: 4px;
+    color: var(--color-text);
+    cursor: pointer;
+    font-family: var(--font-mono);
+}
+
+.frequency-controls button:hover {
+    background-color: var(--color-highlight);
+}
+
+.frequency-controls input[type="range"] {
+    flex: 1;
+    min-width: 200px;
+}
+
+.signal-indicator {
+    height: 20px;
+    background-color: var(--color-primary);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.signal-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--color-warning) 0%, var(--color-success) 100%);
+    transition: width var(--transition-fast);
+}
+
+/* Notifications */
+#notification-area {
+    position: absolute;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: var(--z-notification);
+    pointer-events: none;
+}
+
+.notification {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%);
+    border: 2px solid var(--color-purple);
+    border-radius: 8px;
+    color: var(--color-text);
+    font-size: 14px;
+    animation: slideIn 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.notification.fade-out {
+    animation: slideOut 0.5s ease forwards;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+}
+
+/* Responsive Design */
+
+/* Tablet (481px - 1024px) */
+@media (max-width: 1024px) {
+    #dialogue-box {
+        width: calc(100% - 30px);
+        padding: 16px;
+        gap: 16px;
+    }
+
+    #dialogue-portrait {
+        width: 80px;
+        height: 80px;
+    }
+
+    #dialogue-speaker {
+        font-size: 16px;
+    }
+
+    #dialogue-text {
+        font-size: 14px;
+    }
+
+    #inventory-items {
+        grid-template-columns: repeat(3, 55px);
+    }
+
+    #quest-list {
+        min-width: 260px;
+        max-width: 320px;
+    }
+
+    #game-menu {
+        gap: 6px;
+    }
+
+    .frequency-display {
+        font-size: 36px;
+    }
+}
+
+/* Smartphone (320px - 480px) */
+@media (max-width: 480px) {
+    #dialogue-box {
+        bottom: 10px;
+        width: calc(100% - 20px);
+        padding: 12px;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    #dialogue-portrait {
+        width: 60px;
+        height: 60px;
+        align-self: center;
+    }
+
+    #dialogue-speaker {
+        font-size: 14px;
+        text-align: center;
+    }
+
+    #dialogue-text {
+        font-size: 13px;
+    }
+
+    #inventory-toggle {
+        padding: 8px 12px;
+    }
+
+    #inventory-toggle .label {
+        display: none;
+    }
+
+    #inventory-items {
+        grid-template-columns: repeat(3, 50px);
+        gap: 8px;
+        padding: 12px;
+    }
+
+    #quest-toggle {
+        padding: 8px 12px;
+    }
+
+    #quest-toggle .label {
+        display: none;
+    }
+
+    #quest-list {
+        min-width: 200px;
+        max-width: calc(100vw - 40px);
+        padding: 12px;
+    }
+
+    .quest-name {
+        font-size: 14px;
+    }
+
+    .quest-description {
+        font-size: 12px;
+    }
+
+    #game-menu {
+        gap: 6px;
+    }
+
+    #game-menu button {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    #time-display {
+        font-size: 12px;
+        padding: 8px 12px;
+        gap: 12px;
+    }
+
+    #game-top-bar,
+    #game-bottom-bar {
+        padding: 4px 8px;
+    }
+
+    .puzzle {
+        padding: 20px;
+    }
+
+    .puzzle h2 {
+        font-size: 20px;
+    }
+
+    .frequency-display {
+        font-size: 28px;
+        padding: 16px;
+    }
+
+    .frequency-controls {
+        gap: 6px;
+    }
+
+    .frequency-controls button {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+
+    .hotspot[data-tooltip]:hover::after {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+}
+
+/* Touch-friendly adjustments */
+@media (hover: none) and (pointer: coarse) {
+    .hotspot {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    #inventory-toggle,
+    #quest-toggle,
+    #game-menu button {
+        min-height: 44px;
+    }
+
+    .inventory-item {
+        min-width: 50px;
+        min-height: 50px;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        min-height: 44px;
+    }
+}
+
+/* Landscape phone optimization */
+@media (max-height: 500px) and (orientation: landscape) {
+    #dialogue-box {
+        bottom: 5px;
+        padding: 10px;
+        max-height: 40vh;
+    }
+
+    #dialogue-portrait {
+        width: 50px;
+        height: 50px;
+    }
+
+    #game-top-bar,
+    #game-bottom-bar {
+        padding: 3px 8px;
+    }
+}
+
+/* Hidden utility class */
+.hidden {
+    display: none !important;
+}
+
+/* ===========================================
+   CSS Scene Graphics (Placeholder Artwork)
+   =========================================== */
+
+/* Scene name label */
+#scene-background::before {
+    content: attr(data-scene-name);
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    z-index: 100;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* HOME SCENE - Kitchen */
+/* Home: SVG background only — placeholder removed */
+/* #scene-background.scene-home {
+    background: none;
+}
+
+#scene-background.scene-home::after {
+    display: none;
+} */
+
+/* MANCAVE SCENE - Tech Lab */
+/* Mancave: SVG background only — placeholder removed */
+#scene-background.scene-mancave {
+    background: none;
+}
+
+#scene-background.scene-mancave::after {
+    display: none;
+}
+
+/* SIMULATION SCENE */
+/* Simulation: SVG background only — placeholder removed */
+/* #scene-background.scene-simulation {
+    background: none;
+}
+
+#scene-background.scene-simulation::after {
+    display: none;
+} */
+
+/* WSRT / ASTRON SCENE */
+/* ASTRON: SVG background only — placeholder removed */
+#scene-background.scene-astron {
+    background: none;
+}
+
+/* GARDEN SCENE */
+/* Garden: SVG background only — placeholder removed */
+#scene-background.scene-garden {
+    background: none;
+}
+
+#scene-background.scene-garden::after {
+    display: none;
+}
+
+/* KLOOSTER SCENE */
+/* Klooster: SVG background only — placeholder removed */
+#scene-background.scene-klooster {
+    background: none;
+}
+
+#scene-background.scene-klooster::after {
+    display: none;
+}
+
+/* FACILITY SCENE */
+/* Facility: SVG background only — placeholder removed */
+#scene-background.scene-facility {
+    background: none;
+}
+
+#scene-background.scene-facility::after {
+    display: none;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+}
+
+/* Hotspots — visible on hover only (placeholder debug borders removed) */
+
+/* ==========================================
+   PLAYER CHARACTER STYLES
+   ========================================== */
+
+/* Character container */
+.player-character {
+    position: absolute;
+    z-index: 50;
+    transform: translateX(-50%);
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.player-character.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.player-character .character-sprite {
+    height: 100%;
+    width: auto;
+    transition: transform 0.1s ease;
+    filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.5));
+}
+
+/* South Park style - paper cutout animation */
+.player-character.southpark-style .character-sprite {
+    image-rendering: crisp-edges;
+    filter: drop-shadow(3px 3px 2px rgba(0, 0, 0, 0.4));
+}
+
+.player-character.walking .character-sprite {
+    animation: walkBob 0.3s ease-in-out infinite;
+}
+
+/* South Park walk - more exaggerated bobbing */
+.player-character.southpark-style.walking .character-sprite {
+    animation: southparkWalk 0.25s steps(2, end) infinite;
+}
+
+@keyframes walkBob {
+
+    0%,
+    100% {
+        transform: translateY(0) scaleX(1);
+    }
+
+    50% {
+        transform: translateY(-2px) scaleX(1);
+    }
+}
+
+@keyframes southparkWalk {
+    0% {
+        transform: translateY(0) scaleY(1);
+    }
+
+    50% {
+        transform: translateY(-4px) scaleY(0.98);
+    }
+
+    100% {
+        transform: translateY(0) scaleY(1);
+    }
+}
+
+/* Thought Bubble */
+.thought-bubble {
+    position: absolute;
+    z-index: 60;
+    transform: translateX(-50%);
+    max-width: 280px;
+    min-width: 150px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 12px 16px;
+    box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    pointer-events: none;
+}
+
+.thought-bubble.hidden {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+}
+
+.thought-bubble.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Thought bubble tail - cloud-like dots */
+.thought-bubble::before,
+.thought-bubble::after {
+    content: '';
+    position: absolute;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.thought-bubble::before {
+    width: 16px;
+    height: 16px;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.thought-bubble::after {
+    width: 10px;
+    height: 10px;
+    bottom: -32px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.thought-text {
+    font-family: var(--font-main);
+    font-size: 14px;
+    color: #333;
+    line-height: 1.5;
+    text-align: center;
+    font-style: italic;
+}
+
+/* Thinking animation dots */
+.thought-dots {
+    display: none;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.thought-dots span {
+    width: 6px;
+    height: 6px;
+    background: #666;
+    border-radius: 50%;
+    animation: thinkingDots 1.4s ease-in-out infinite;
+}
+
+.thought-dots span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.thought-dots span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes thinkingDots {
+
+    0%,
+    80%,
+    100% {
+        transform: scale(0.6);
+        opacity: 0.5;
+    }
+
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Walking cursor when clicking to move */
+#scene-container.can-walk {
+    cursor: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><text y="24" font-size="24">🚶</text></svg>') 16 16, pointer;
+}
+
+/* ============ Livingroom Scene Character Animations ============ */
+
+/* Dog sleeping animation - gentle breathing */
+@keyframes dogSleeping {
+
+    0%,
+    100% {
+        transform: translateY(0px) scale(1);
+    }
+
+    50% {
+        transform: translateY(-1px) scale(1.01);
+    }
+}
+
+.npc-character[data-character="dog_white"] {
+    animation: dogSleeping 3s ease-in-out infinite;
+    transform-origin: center bottom;
+}
+
+/* Pug walking around animation */
+@keyframes pugWalk {
+    0% {
+        left: 30%;
+        transform: scaleX(1);
+    }
+
+    25% {
+        left: 45%;
+        transform: scaleX(1);
+    }
+
+    50% {
+        left: 60%;
+        transform: scaleX(-1);
+    }
+
+    75% {
+        left: 45%;
+        transform: scaleX(-1);
+    }
+
+    100% {
+        left: 30%;
+        transform: scaleX(1);
+    }
+}
+
+.npc-character[data-character="pug"] {
+    animation: pugWalk 20s linear infinite;
+}
+
+/* Ies watching TV - subtle movement */
+@keyframes watchingTV {
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-1px);
+    }
+}
+
+.npc-character[data-character="ies"] {
+    animation: watchingTV 4s ease-in-out infinite;
+}
+
+/* ============ Mobile & Touch Responsiveness ============ */
+
+/* Prevent text selection during touch interactions */
+* {
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Make all interactive elements touch-friendly */
+.hotspot,
+button,
+.inventory-item,
+#inventory-toggle,
+#quest-toggle {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+
+    /* Increase tap target sizes for mobile */
+    .hotspot {
+        min-width: 40px;
+        min-height: 40px;
+    }
+
+    /* Dialogue box adjustments */
+    #dialogue-box {
+        bottom: 10px;
+        width: calc(100% - 20px);
+        padding: 15px;
+        gap: 15px;
+    }
+
+    #dialogue-portrait {
+        width: 60px;
+        height: 60px;
+    }
+
+    #dialogue-speaker {
+        font-size: 16px;
+    }
+
+    #dialogue-text {
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    #dialogue-continue {
+        font-size: 11px;
+        bottom: 5px;
+        right: 10px;
+    }
+
+    /* Inventory adjustments */
+    #inventory-toggle {
+        padding: 8px 12px;
+        gap: 6px;
+    }
+
+    #inventory-toggle .icon {
+        font-size: 20px;
+    }
+
+    #inventory-toggle .label {
+        font-size: 12px;
+    }
+
+    #inventory-items {
+        grid-template-columns: repeat(3, 55px);
+        padding: 12px;
+        max-height: 250px;
+    }
+
+    .inventory-item {
+        padding: 6px;
+    }
+
+    .inventory-item img {
+        width: 35px;
+        height: 35px;
+    }
+
+    /* Quest log adjustments */
+    #quest-toggle {
+        padding: 8px 12px;
+        gap: 6px;
+    }
+
+    #quest-toggle .icon {
+        font-size: 20px;
+    }
+
+    #quest-toggle .label {
+        font-size: 12px;
+    }
+
+    #quest-list {
+        min-width: 250px;
+        max-width: calc(100vw - 30px);
+        max-height: 350px;
+        padding: 12px;
+    }
+
+    .quest-item {
+        padding: 10px;
+    }
+
+    .quest-name {
+        font-size: 14px;
+    }
+
+    .quest-description {
+        font-size: 13px;
+    }
+
+    /* Game menu adjustments */
+    #game-menu {
+        gap: 5px;
+        flex-wrap: wrap;
+        max-width: calc(100vw - 20px);
+    }
+
+    #game-menu button {
+        padding: 8px 12px;
+        font-size: 12px;
+        min-width: 70px;
+    }
+
+    #menu-voice {
+        min-width: 75px;
+    }
+
+    /* Time display adjustments */
+    #time-display {
+        padding: 8px 16px;
+        gap: 15px;
+        font-size: 14px;
+    }
+
+    /* Puzzle container adjustments */
+    #puzzle-container {
+        width: 95%;
+        max-height: 80vh;
+    }
+
+    .puzzle {
+        padding: 20px;
+    }
+
+    .puzzle h2 {
+        font-size: 20px;
+        margin-bottom: 15px;
+    }
+
+    /* Puzzle button adjustments for touch */
+    .puzzle button,
+    .btn-primary,
+    .btn-secondary,
+    .frequency-controls button {
+        min-height: 44px;
+        padding: 10px 18px;
+        font-size: 14px;
+        touch-action: manipulation;
+    }
+
+    .puzzle-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .puzzle-actions button {
+        flex: 1;
+        min-width: 120px;
+    }
+
+    /* Frequency puzzle adjustments */
+    .frequency-display {
+        font-size: 36px;
+        padding: 15px;
+    }
+
+    .frequency-controls {
+        gap: 8px;
+    }
+
+    .frequency-controls button {
+        min-height: 44px;
+        padding: 10px 14px;
+        font-size: 16px;
+    }
+
+    .frequency-controls input[type="range"] {
+        min-width: 150px;
+    }
+
+    /* Password puzzle input */
+    .puzzle-input input {
+        min-height: 44px;
+        font-size: 16px;
+        padding: 10px;
+    }
+
+    /* Cipher puzzle textarea */
+    .puzzle-input textarea {
+        min-height: 100px;
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    /* Tooltip adjustments - move above on mobile */
+    .hotspot[data-tooltip]:active::after,
+    .hotspot[data-tooltip]:focus::after {
+        bottom: calc(100% + 5px);
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+
+    /* Hide labels on very small screens */
+    #inventory-toggle .label,
+    #quest-toggle .label {
+        display: none;
+    }
+
+    #inventory-toggle,
+    #quest-toggle {
+        padding: 8px;
+    }
+
+    /* Stack dialogue vertically on very small screens */
+    #dialogue-box {
+        flex-direction: column;
+        padding: 12px;
+    }
+
+    #dialogue-portrait {
+        width: 50px;
+        height: 50px;
+        align-self: center;
+    }
+
+    #dialogue-speaker {
+        font-size: 14px;
+        text-align: center;
+    }
+
+    #dialogue-text {
+        font-size: 13px;
+    }
+
+    /* Smaller inventory grid */
+    #inventory-items {
+        grid-template-columns: repeat(2, 50px);
+        gap: 8px;
+    }
+
+    /* Compact game menu */
+    #game-menu button {
+        padding: 6px 10px;
+        font-size: 11px;
+        min-width: 60px;
+    }
+
+    #menu-voice {
+        min-width: 65px;
+    }
+
+    /* Time display more compact */
+    #time-display {
+        padding: 6px 12px;
+        gap: 10px;
+        font-size: 12px;
+    }
+
+    /* Frequency puzzle compact */
+    .frequency-display {
+        font-size: 28px;
+        padding: 12px;
+    }
+
+    .frequency-controls button {
+        padding: 8px 10px;
+        font-size: 14px;
+        min-width: 40px;
+    }
+
+    /* Prevent zoom on input focus for iOS */
+    input,
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
+}
+
+/* Landscape mobile devices */
+@media (max-width: 768px) and (orientation: landscape) {
+
+    /* Adjust dialogue box for landscape */
+    #dialogue-box {
+        bottom: 5px;
+        padding: 10px;
+        max-width: 600px;
+    }
+
+    /* Move UI elements closer to edges */
+    #inventory-bar {
+        top: 5px;
+        left: 5px;
+    }
+
+    #quest-log {
+        top: 5px;
+        right: 5px;
+    }
+
+    #game-menu {
+        bottom: 5px;
+        right: 5px;
+    }
+
+    #time-display {
+        top: 5px;
+    }
+}
+
+/* Tablet devices */
+@media (min-width: 769px) and (max-width: 1024px) {
+
+    /* Slightly larger tap targets for tablets */
+    .hotspot {
+        min-width: 30px;
+        min-height: 30px;
+    }
+
+    #dialogue-box {
+        width: calc(100% - 60px);
+    }
+
+    #inventory-items {
+        grid-template-columns: repeat(4, 60px);
+    }
+
+    #quest-list {
+        min-width: 280px;
+    }
+}
+
+/* Touch device specific enhancements */
+@media (hover: none) and (pointer: coarse) {
+
+    /* Remove hover effects on touch devices */
+    .hotspot:hover {
+        border-color: transparent;
+        background-color: transparent;
+        box-shadow: none;
+    }
+
+    /* Show interaction feedback on touch */
+    .hotspot:active {
+        border-color: rgba(233, 69, 96, 0.8);
+        background-color: rgba(233, 69, 96, 0.2);
+    }
+
+    #inventory-toggle:hover,
+    #quest-toggle:hover,
+    #game-menu button:hover {
+        border-color: var(--color-accent);
+        background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%);
+    }
+
+    #inventory-toggle:active,
+    #quest-toggle:active,
+    #game-menu button:active {
+        border-color: var(--color-highlight);
+        transform: scale(0.95);
+    }
+
+    .inventory-item:hover {
+        transform: none;
+    }
+
+    .inventory-item:active {
+        transform: scale(0.95);
+    }
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%);
+    border: 2px solid var(--color-accent);
+    border-radius: 8px;
+    padding: 0;
+    max-width: 800px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+    animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--color-accent);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.modal-header h2 {
+    color: var(--color-purple);
+    font-family: var(--font-mono);
+    font-size: 1.5rem;
+    margin: 0;
+    text-shadow: 0 0 10px rgba(157, 75, 235, 0.5);
+}
+
+.modal-close {
+    background: transparent;
+    border: 2px solid var(--color-text-dim);
+    color: var(--color-text);
+    font-size: 1.5rem;
+    width: 35px;
+    height: 35px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    font-weight: bold;
+}
+
+.modal-close:hover {
+    background: var(--color-error);
+    border-color: var(--color-error);
+    transform: scale(1.1);
+}
+
+.modal-body {
+    padding: 1.5rem;
+    color: var(--color-text);
+    overflow-y: auto;
+    max-height: calc(80vh - 100px);
+}
+
+.modal-body p {
+    margin-bottom: 0.5rem;
+}
+
+.modal-body ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.modal-body ul li {
+    position: relative;
+    padding-left: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.modal-body ul li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--color-success);
+}
+
+.modal-body strong {
+    color: var(--color-success);
+}
+
+/* Responsive Modal */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    .modal-header h2 {
+        font-size: 1.2rem;
+    }
+
+    .modal-body {
+        padding: 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE DYNAMIC OVERLAYS — inline SVG layers for interactive
+   elements that respond to story phase (lasers, sensors, etc.)
+   ═══════════════════════════════════════════════════════════════ */
+
+.scene-overlay-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Laser beam flicker-die animation */
+@keyframes laser-flicker-die {
+    0% {
+        opacity: 1;
+    }
+
+    10% {
+        opacity: 0.2;
+    }
+
+    25% {
+        opacity: 0.7;
+    }
+
+    40% {
+        opacity: 0.1;
+    }
+
+    55% {
+        opacity: 0.5;
+    }
+
+    70% {
+        opacity: 0.05;
+    }
+
+    85% {
+        opacity: 0.3;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+/* Sensor pod jam animation */
+@keyframes sensor-jam-die {
+    0% {
+        opacity: 1;
+    }
+
+    15% {
+        opacity: 0.8;
+    }
+
+    30% {
+        opacity: 0.4;
+    }
+
+    50% {
+        opacity: 0.9;
+    }
+
+    65% {
+        opacity: 0.2;
+    }
+
+    80% {
+        opacity: 0.6;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+/* Door lock unlock flash */
+@keyframes lock-unlock-flash {
+    0% {
+        opacity: 1;
+    }
+
+    30% {
+        opacity: 0.3;
+    }
+
+    60% {
+        opacity: 0.8;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Hackerspace Workshop VFX
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Welding flash pulse */
+@keyframes hs-weld-pulse {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.4;
+        transform: scale(1.5);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Spark fly outward */
+@keyframes hs-spark-fly {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(var(--spark-dx), var(--spark-dy));
+    }
+}
+
+/* Printer ding text float */
+@keyframes hs-printer-ding {
+    0% {
+        opacity: 0;
+        transform: translateY(0);
+    }
+
+    15% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+}
+
+/* Chatter bubble appear and fade */
+@keyframes hs-bubble-fade {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(5px);
+    }
+
+    10% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    80% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-8px);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Hackerspace Classroom VFX
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Audience reaction emoji float up */
+@keyframes hsc-reaction-float {
+    0% {
+        opacity: 0;
+        transform: translateY(0) scale(0.5);
+    }
+
+    20% {
+        opacity: 1;
+        transform: translateY(-10px) scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-40px) scale(0.8);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SAVE SLOT MODAL
+   ═══════════════════════════════════════════════════════════════════ */
+
+.save-slot-modal-content {
+    max-width: 680px;
+}
+
+.save-slot-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 600px) {
+    .save-slot-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.slot-card {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--color-accent);
+    border-radius: 6px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.slot-card:hover {
+    border-color: var(--color-success);
+    box-shadow: 0 0 12px rgba(78, 204, 163, 0.3);
+}
+
+.slot-card--empty {
+    border-style: dashed;
+    opacity: 0.65;
+}
+
+.slot-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.slot-card__number {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--color-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.slot-card__scene {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.slot-card__meta {
+    font-size: 0.8rem;
+    color: var(--color-success);
+    font-family: var(--font-mono);
+}
+
+.slot-card__timestamp {
+    font-size: 0.72rem;
+    color: var(--color-text-dim);
+    margin-bottom: 0.4rem;
+}
+
+.slot-card__info--empty {
+    font-size: 0.85rem;
+    color: var(--color-text-dim);
+    text-align: center;
+    padding: 0.5rem 0;
+}
+
+.slot-action-btn {
+    margin-top: auto;
+    padding: 0.45rem 0.7rem;
+    background: linear-gradient(135deg, rgba(0, 200, 255, 0.15), rgba(0, 100, 200, 0.15));
+    border: 1px solid var(--color-accent);
+    border-radius: 4px;
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+    text-align: center;
+}
+
+.slot-action-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(0, 200, 255, 0.3), rgba(0, 100, 200, 0.3));
+    box-shadow: 0 0 8px rgba(0, 200, 255, 0.4);
+}
+
+.slot-action-btn--overwrite {
+    border-color: var(--color-warning, #f5a623);
+    color: var(--color-warning, #f5a623);
+}
+
+.slot-action-btn--disabled,
+.slot-action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.slot-delete-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--color-text-dim);
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 3px;
+    line-height: 1;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.slot-delete-btn:hover {
+    color: var(--color-error);
+    border-color: var(--color-error);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SETTINGS MODAL
+   ═══════════════════════════════════════════════════════════════════ */
+
+.settings-modal-content {
+    max-width: 520px;
+}
+
+.settings-section {
+    margin-bottom: 1.5rem;
+}
+
+.settings-section-title {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-accent);
+    margin: 0 0 0.75rem 0;
+    border-bottom: 1px solid rgba(0, 200, 255, 0.2);
+    padding-bottom: 0.3rem;
+}
+
+.settings-row {
+    margin-bottom: 1.1rem;
+}
+
+.settings-row__labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.35rem;
+}
+
+.settings-row__name {
+    font-size: 0.9rem;
+    color: var(--color-text);
+}
+
+.settings-row__value {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--color-success);
+    min-width: 60px;
+    text-align: right;
+}
+
+.settings-row__presets {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.preset-btn {
+    padding: 0.25rem 0.65rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--color-text-dim);
+    border-radius: 3px;
+    color: var(--color-text-dim);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.preset-btn:hover,
+.preset-btn--active {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    background: rgba(0, 200, 255, 0.1);
+}
+
+.preset-btn--active {
+    font-weight: 700;
+}
+
+.settings-slider {
+    width: 100%;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: linear-gradient(to right, var(--color-accent) var(--val, 50%), rgba(255, 255, 255, 0.15) var(--val, 50%));
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+
+.settings-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    border: 2px solid var(--color-primary);
+    box-shadow: 0 0 6px rgba(0, 200, 255, 0.5);
+    cursor: pointer;
+}
+
+.settings-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    border: 2px solid var(--color-primary);
+    box-shadow: 0 0 6px rgba(0, 200, 255, 0.5);
+    cursor: pointer;
+}
+
+.settings-footer {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 0.5rem;
+}
+
+.settings-btn {
+    padding: 0.5rem 1.2rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid;
+}
+
+.settings-btn--apply {
+    background: linear-gradient(135deg, rgba(78, 204, 163, 0.25), rgba(0, 180, 120, 0.25));
+    border-color: var(--color-success);
+    color: var(--color-success);
+}
+
+.settings-btn--apply:hover {
+    background: linear-gradient(135deg, rgba(78, 204, 163, 0.45), rgba(0, 180, 120, 0.45));
+    box-shadow: 0 0 10px rgba(78, 204, 163, 0.4);
+}
+
+.settings-btn--cancel {
+    background: rgba(0, 0, 0, 0.3);
+    border-color: var(--color-text-dim);
+    color: var(--color-text-dim);
+}
+
+.settings-btn--cancel:hover {
+    border-color: var(--color-text);
+    color: var(--color-text);
+}
+
+.settings-btn--reset {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: rgba(200, 100, 100, 0.5);
+    color: rgba(200, 100, 100, 0.8);
+    font-size: 0.78rem;
+    margin-right: auto;
+}
+
+.settings-btn--reset:hover {
+    border-color: var(--color-error);
+    color: var(--color-error);
+}
+
+/* ===========================================
+   Accessibility / Movie Mode badge
+   =========================================== */
+
+#accessibility-badge {
+    position: fixed;
+    bottom: 56px;
+    /* sits just above the bottom bar */
+    right: 12px;
+    z-index: 9000;
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid rgba(0, 255, 255, 0.45);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    color: rgba(0, 255, 255, 0.85);
+    pointer-events: none;
+    animation: badge-pulse 3s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* Menu button highlight when movie mode is active */
+#menu-movie.accessibility-active {
+    border-color: rgba(0, 255, 255, 0.6) !important;
+    color: rgba(0, 255, 255, 0.9) !important;
+    background: rgba(0, 255, 255, 0.08) !important;
+}
+
+@keyframes floatBG {
+
+    0%,
+    100% {
+        background-position: center center;
+    }
+
+    25% {
+        background-position: 30% 70%;
+    }
+
+    50% {
+        background-position: 70% 30%;
+    }
+
+    75% {
+        background-position: 40% 60%;
+    }
+}
+
+.glass-button {
+    /* position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); */
+    /* cursor: pointer;
+    outline: none;
+    width: 350px;
+    height: 180px; */
+    border-radius: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: linear-gradient(135deg,
+            rgba(255, 255, 255, 0.2) 0%,
+            rgba(255, 255, 255, 0.08) 50%,
+            rgba(255, 255, 255, 0.03) 100%);
+
+    backdrop-filter: url(#glass);
+    transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+}
+
+.glass-button span {
+    font-family: "Orbitron", sans-serif;
+    color: white;
+    font-size: 2.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.glass-button:hover {
+    transform: translate(-50%, -50%) scale(1.05);
+}

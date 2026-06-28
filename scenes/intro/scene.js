@@ -848,7 +848,7 @@ const IntroScene = {
             '<div class="cine-grain"></div>' +
             '<div class="cine-vignette"></div>' +
             '<div class="cine-flash" id="cine-flash"></div>' +
-            '<button class="cine-skip" id="cine-skip">Lewati Intro &#9658;</button>' +
+            '<button class="cine-skip" id="cine-skip">Lewati &#9658;</button>' +
             dotsHTML +
 
             '<!-- ACT 0: BLACK HOLD -->' +

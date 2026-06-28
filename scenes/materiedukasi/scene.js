@@ -1026,8 +1026,8 @@ const MateriEdukasiScene = {
                 content: `
                     <div class="matedukasi-bg" style="background-image: url('assets/images/materi_img/slide2.png'); animation-duration: 14s;"></div>
                     <div class="matedukasi-text-overlay">
-                        <p>Internet memudahkan kita belajar, bekerja, berbelanja, hingga berkomunikasi.</p>
-                        <p>Namun, di balik kemudahan tersebut terdapat berbagai ancaman yang dapat mencuri data pribadi, akun media sosial, bahkan informasi keuangan apabila kita tidak berhati-hati.</p>
+                        Internet memudahkan kita belajar, bekerja, berbelanja, hingga berkomunikasi.</br>
+                        Namun, di balik kemudahan tersebut terdapat berbagai ancaman yang dapat mencuri data pribadi, akun media sosial, bahkan informasi keuangan apabila kita tidak berhati-hati.
                     </div>
                 `
             },
@@ -1038,8 +1038,8 @@ const MateriEdukasiScene = {
                 content: `
                     <div class="matedukasi-bg" style="background-image: url('assets/images/materi_img/slide3.png'); animation-duration: 14s;"></div>
                     <div class="matedukasi-text-overlay">
-                        <p>Phishing adalah metode penipuan yang dilakukan dengan menyamar sebagai pihak yang terpercaya untuk memperoleh informasi sensitif, seperti username, password, kode OTP, maupun data kartu pembayaran.</p>
-                        <p>Biasanya pelaku menggunakan email, pesan singkat, media sosial, atau situs web palsu.</p>
+                        Phishing adalah metode penipuan yang dilakukan dengan menyamar sebagai pihak yang terpercaya untuk memperoleh informasi sensitif, seperti username, password, kode OTP, maupun data kartu pembayaran.</br>
+                        Biasanya pelaku menggunakan email, pesan singkat, media sosial, atau situs web palsu.
                     </div>
                 `
             },
@@ -1050,8 +1050,8 @@ const MateriEdukasiScene = {
                 content: `
                     <div class="matedukasi-bg" style="background-image: url('assets/images/materi_img/slide4.png'); animation-duration: 14s;"></div>
                     <div class="matedukasi-text-overlay">
-                        <p>Pelaku akan mengirimkan pesan yang terlihat meyakinkan, misalnya pemberitahuan akun akan diblokir, hadiah undian, atau promo tertentu.</p>
-                        <p>Korban kemudian diarahkan untuk mengklik tautan dan memasukkan data pribadi pada halaman palsu yang telah disiapkan.</p>
+                        Pelaku akan mengirimkan pesan yang terlihat meyakinkan, misalnya pemberitahuan akun akan diblokir, hadiah undian, atau promo tertentu.</br>
+                        Korban kemudian diarahkan untuk mengklik tautan dan memasukkan data pribadi pada halaman palsu yang telah disiapkan.
                     </div>
                 `
             },
@@ -1062,8 +1062,8 @@ const MateriEdukasiScene = {
                 content: `
                     <div class="matedukasi-bg" style="background-image: url('assets/images/materi_img/slide5.png'); animation-duration: 14s;"></div>
                     <div class="matedukasi-text-overlay">
-                        <p>Beberapa tanda phishing yang perlu diperhatikan antara lain yaitu Alamat email pengirim tidak resmi, URL website berbeda dari yang asli, Banyak kesalahan penulisan, Pesan bernada mendesak, Meminta informasi pribadi.</p>
-                        <p>Jika menemukan salah satu tanda tersebut, jangan langsung mempercayainya.</p>
+                        Beberapa tanda phishing yang perlu diperhatikan antara lain yaitu Alamat email pengirim tidak resmi, URL website berbeda dari yang asli, Banyak kesalahan penulisan, Pesan bernada mendesak, Meminta informasi pribadi.</br>
+                        Jika menemukan salah satu tanda tersebut, jangan langsung mempercayainya.
                     </div>
                 `
             },
@@ -1074,8 +1074,8 @@ const MateriEdukasiScene = {
                 content: `
                     <div class="matedukasi-bg" style="background-image: url('assets/images/materi_img/slide6.png'); animation-duration: 14s;"></div>
                     <div class="matedukasi-text-overlay">
-                        <p>Berbeda dengan phishing biasa, Spear Phishing merupakan serangan yang menargetkan orang tertentu.</p>
-                        <p>Pelaku biasanya sudah mengetahui sebagian informasi mengenai korbannya sehingga pesan yang dikirim terlihat lebih meyakinkan dan sulit dikenali.</p>
+                        Berbeda dengan phishing biasa, Spear Phishing merupakan serangan yang menargetkan orang tertentu.</br>
+                        Pelaku biasanya sudah mengetahui sebagian informasi mengenai korbannya sehingga pesan yang dikirim terlihat lebih meyakinkan dan sulit dikenali.
                     </div>
                 `
             },
@@ -1086,8 +1086,8 @@ const MateriEdukasiScene = {
                 content: `
                     <div class="matedukasi-bg" style="background-image: url('assets/images/materi_img/slide7.png'); animation-duration: 14s;"></div>
                     <div class="matedukasi-text-overlay">
-                        <p>Dalam Spear Phishing, pelaku dapat menggunakan nama korban, tempat bekerja, sekolah, teman, bahkan aktivitas di media sosial untuk membangun kepercayaan.</p>
-                        <p>Karena terlihat sangat nyata, korban sering kali tidak menyadari bahwa dirinya sedang menjadi sasaran penipuan.</p>
+                        Dalam Spear Phishing, pelaku dapat menggunakan nama korban, tempat bekerja, sekolah, teman, bahkan aktivitas di media sosial untuk membangun kepercayaan.</br>
+                        Karena terlihat sangat nyata, korban sering kali tidak menyadari bahwa dirinya sedang menjadi sasaran penipuan.
                     </div>
                 `
             },
@@ -1098,8 +1098,8 @@ const MateriEdukasiScene = {
                 content: `
                     <div class="matedukasi-bg" style="background-image: url('assets/images/materi_img/slide8.png'); animation-duration: 14s;"></div>
                     <div class="matedukasi-text-overlay">
-                        <p>Misalnya kamu menerima email dari seseorang yang mengaku sebagai dosen, HRD perusahaan, atau jasa ekspedisi.</p>
-                        <p>Email tersebut menyebut namamu dan meminta membuka lampiran atau mengisi data melalui tautan tertentu. Meskipun terlihat resmi, pesan tersebut belum tentu berasal dari pihak yang sebenarnya.</p>
+                        Misalnya kamu menerima email dari seseorang yang mengaku sebagai dosen, HRD perusahaan, atau jasa ekspedisi.</br>
+                        Email tersebut menyebut namamu dan meminta membuka lampiran atau mengisi data melalui tautan tertentu. Meskipun terlihat resmi, pesan tersebut belum tentu berasal dari pihak yang sebenarnya.
                     </div>
                 `
             },
@@ -1110,7 +1110,7 @@ const MateriEdukasiScene = {
                 content: `
                     <div class="matedukasi-bg" style="background-image: url('assets/images/materi_img/slide9.png'); animation-duration: 14s;"></div>
                     <div class="matedukasi-text-overlay">
-                        <p>Sebelum mengklik tautan atau memberikan informasi pribadi, biasakan untuk Memeriksa alamat email pengirim, Memastikan URL website benar, Tidak membagikan kode OTP, Mengaktifkan autentikasi dua faktor (2FA), Melakukan verifikasi kepada pihak terkait apabila merasa ragu.</p>
+                        Sebelum mengklik tautan atau memberikan informasi pribadi, biasakan untuk Memeriksa alamat email pengirim, Memastikan URL website benar, Tidak membagikan kode OTP, Mengaktifkan autentikasi dua faktor (2FA), Melakukan verifikasi kepada pihak terkait apabila merasa ragu.
                     </div>
                 `
             },
@@ -1120,7 +1120,6 @@ const MateriEdukasiScene = {
                 voice: { text: 'Sekarang kamu telah memahami dasar-dasar phishing dan Spear Phishing. Selanjutnya, kamu akan mencoba mendeteksi berbagai ancaman melalui simulasi Point-and-Click. Temukan setiap tanda yang mencurigakan dan buktikan bahwa kamu siap menjadi seorang Cyber Guard.', speaker: 'Documentary' },
                 content: `
                     <div class="matedukasi-bg" style="background-image: url('assets/images/materi_img/slide10.png'); animation-direction: reverse;"></div>
-                    <div class="matedukasi-text-overlay">Sekarang kamu telah memahami dasar-dasar phishing dan Spear Phishing. Selanjutnya, kamu akan mencoba mendeteksi berbagai ancaman melalui simulasi Point-and-Click. Temukan setiap tanda yang mencurigakan dan buktikan bahwa kamu siap menjadi seorang Cyber Guard.</div>
                     <div class="matedukasi-title-card">
                         <span class="matedukasi-accent"></span>
                         <h1>Yuk Mulai Simulasi!</h1>

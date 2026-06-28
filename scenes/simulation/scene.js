@@ -7,13 +7,7 @@ const SimulationScene = {
   accessibilityLooping: true,
   idleThoughts: [
     "Need more coffee...",
-    "Check the signal analyzer.",
-    "Should update my dead man's switch.",
-    "Flipper Zero firmware needs updating.",
-    "The SSTV terminal is humming.",
     "When did I last sleep?",
-    "Drenthe: land of radio silence. Perfect for listening.",
-    "Wonder what's on 243 MHz today."
   ],
 
   hotspots: [

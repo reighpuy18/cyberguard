@@ -10,10 +10,10 @@ const loadingScreen = document.getElementById('loading-screen');
 const titleScreen = document.getElementById('title-screen');
 
 const loadingSteps = [
-    // { progress: 20, status: 'Memuat...' },
-    // { progress: 40, status: 'Menginisialisasi adegan...' },
-    // { progress: 60, status: 'Memuat assets...' },
-    // { progress: 80, status: 'Configuring systems...' },
+    { progress: 20, status: 'Memuat...' },
+    { progress: 40, status: 'Menginisialisasi adegan...' },
+    { progress: 60, status: 'Memuat assets...' },
+    { progress: 80, status: 'Configuring systems...' },
     { progress: 100, status: 'Berhasil memuat!' }
 ];
 

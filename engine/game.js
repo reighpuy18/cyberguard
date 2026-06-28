@@ -211,7 +211,7 @@ class CyberGuardEngine {
                                 <div id="dialogue-speaker"></div>
                                 <div id="dialogue-text"></div>
                             </div>
-                            <div id="dialogue-continue">Sentuh disini untuk lanjut...</div>
+                            <div id="dialogue-continue">Sentuh untuk lanjut...</div>
                         </div>
                     </div>
                 </div>
@@ -220,7 +220,7 @@ class CyberGuardEngine {
                 <div id="pause-content">
                     <div id="pause-icon">⏸️</div>
                     <div id="pause-title">Sistem sedang dijeda</div>
-                    <div id="pause-hint">Sentuh disini untuk lanjut</div>
+                    <div id="pause-hint">Sentuh untuk lanjut</div>
                 </div>
             </div>
             <div id="notification-area"></div>
@@ -347,30 +347,16 @@ class CyberGuardEngine {
                     this.togglePause();
                     return;
                 }
-                this.closePuzzle();
                 return;
             }
             // Block all other keys while paused
             if (this.isPaused) return;
 
-            if (e.key === 'i' || e.key === 'I') {
-                document.getElementById('inventory-items')?.classList.toggle('hidden');
+            if (e.key === 'h' || e.key === 'H') {
+                document.getElementById('quest-list')?.classList.toggle('hidden');
             }
             if (e.key === ' ' && this.isDialogueActive) {
                 this.advanceDialogue();
-            }
-            if (e.key === 'v' || e.key === 'V') {
-                this.toggleVoice();
-            }
-            // Debug panel toggle (D key)
-            if (e.key === 'd' || e.key === 'D') {
-                if (!this.isDialogueActive && !this.isPuzzleActive) {
-                    this.toggleDebugPanel();
-                }
-            }
-            // Hint (H key)
-            if (e.key === 'h' || e.key === 'H') {
-                if (!this.isPuzzleActive) this.showHint();
             }
         };
         this._addTrackedListener(document, 'keydown', keyHandler);

@@ -2,17 +2,13 @@ const MateriEdukasiScene = {
     id: 'materiedukasi',
     name: 'Materi Edukasi',
 
-    background: 'assets/images/scenes/materi_img/slide.png',
+    background: 'assets/images/materi_img/slide1.png',
     backgroundColor: '#000000',
 
     description: 'Tonton video edukasi mengenai phishing dan sebagainya.',
 
     playerStart: { x: 50, y: 85 },
 
-    // 🎬 Movie Mode: let the documentary auto-play to the end.
-    // The documentary starts automatically on onEnter and self-advances through
-    // all steps via TTS timers + auto-click. We just wait for it to finish.
-    // The skip_docu hotspot remains available as an emergency bail-out.
     accessibilityPath: [
         async function (game) {
             // Poll every 3 s until the documentary sets tv_documentary_watched

@@ -1,5 +1,3 @@
-// Suppress console.log in production (non-localhost) builds.
-// All debug logging is still available on localhost / 127.0.0.1.
 const DEV_MODE = typeof window !== 'undefined' &&
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 if (!DEV_MODE) {
@@ -11,7 +9,6 @@ if (!DEV_MODE) {
 const ENGINE_CONFIG = Object.freeze({
     TRANSITION_DURATION: 500,
     SCENE_CHANGE_DELAY: 300,
-    INVENTORY_AUTO_CLOSE: 2000,
     TYPEWRITER_SPEED: 40,
     NOTIFICATION_DURATION: 3000,
     NOTIFICATION_FADE: 500,
@@ -19,50 +16,6 @@ const ENGINE_CONFIG = Object.freeze({
     DEFAULT_DAY: 1,
     HOURS_IN_DAY: 24,
     MINUTES_IN_HOUR: 60,
-});
-
-/**
- * Scene → clock mapping.
- * When entering a scene the game clock is set to at least this value.
- * If the current clock is already past this time (player explored freely),
- * the clock is NOT wound backwards — only forward jumps are applied.
- * Scenes not listed here leave the clock unchanged.
- */
-const SCENE_TIME_MAP = Object.freeze({
-    // ── Day 1 — Monday Feb 9 ──
-    intro: { day: 1, time: '07:27' },
-    home: { day: 1, time: '07:45' },
-    // livingroom: { day: 1, time: '08:00' },
-    materiedukasi: { day: 1, time: '08:15' },
-    mancave: { day: 1, time: '09:00' },
-    sstv_terminal: { day: 1, time: '11:00' },
-    sdr_bench: { day: 1, time: '16:15' },
-    garden: { day: 1, time: '17:00' },
-    garden_back: { day: 1, time: '17:00' },
-    klooster: { day: 1, time: '22:55' },
-    usb_discovery: { day: 1, time: '22:55' },
-    car_discovery: { day: 1, time: '23:15' },
-
-    // ── Day 2 — Tuesday Feb 10 ──
-    dwingeloo: { day: 2, time: '11:00' },
-    westerbork_memorial: { day: 2, time: '12:00' },
-    hackerspace: { day: 2, time: '13:00' },
-    hackerspace_classroom: { day: 2, time: '13:30' },
-    astron: { day: 2, time: '15:30' },
-    lofar: { day: 2, time: '16:00' },
-    facility: { day: 2, time: '21:47' },
-    facility_interior: { day: 2, time: '22:06' },
-    laser_corridor: { day: 2, time: '22:07' },
-    facility_server: { day: 2, time: '22:08' },
-
-    // ── Day 3 — Wednesday Feb 11 ──
-    long_night: { day: 3, time: '01:00' },
-    debrief: { day: 3, time: '11:00' },
-    return_to_max: { day: 3, time: '20:00' },
-    morning_after: { day: 4, time: '08:00' },
-
-    // ── Epilogue — May 2026 ──
-    epilogue: { day: 90, time: '14:00' },
 });
 
 /**
@@ -86,26 +39,20 @@ class CyberGuardEngine {
     constructor(deps = {}) {
         this.currentScene = null;
         this.scenes = {};
-        this.inventory = [];
         this._defaultGameState = Object.freeze({
-            storyPart: 0,
             questsCompleted: [],
             activeQuests: [],
-            flags: {},
-            time: ENGINE_CONFIG.DEFAULT_TIME,
-            day: ENGINE_CONFIG.DEFAULT_DAY
+            flags: {}
         });
         this._saveVersion = 2; // Bump when save format changes
         this.gameState = JSON.parse(JSON.stringify(this._defaultGameState));
         this.dialogueQueue = [];
         this.isDialogueActive = false;
-        this.isPuzzleActive = false;
         this.initialized = false;
         this._sceneLoading = false;
         this.voiceEnabled = true;
         this.voiceManager = null;
         this.player = null;
-        this.passwordPuzzle = null;
         this.typewriterAbortController = null;
         this.isPaused = false;
         this._autoAdvanceTimer = null;
@@ -126,7 +73,7 @@ class CyberGuardEngine {
             textSpeed: 40,  // ms per character (0 = instant)
             animSpeed: 500,  // ms for scene fade transitions (0 = none)
             autoAdvanceDelay: 0,  // ms before auto-advancing dialogue (0 = manual)
-            docuPauseDuration: 1500, // ms pause after documentary speech finishes
+            materiPauseDuration: 1500, // ms pause after documentary speech finishes
             accessibilityMode: false, // 🎬 Movie mode — auto-plays story path, voices and puzzles
         };
 
@@ -288,15 +235,6 @@ class CyberGuardEngine {
             this._addTrackedListener(sceneEl, 'touchstart', handleSceneInteraction);
         }
 
-        // Inventory toggle (click and touch)
-        const inventoryToggle = document.getElementById('inventory-toggle');
-        const toggleInventory = (e) => {
-            e.preventDefault();
-            document.getElementById('inventory-items')?.classList.toggle('hidden');
-        };
-        inventoryToggle?.addEventListener('click', toggleInventory);
-        inventoryToggle?.addEventListener('touchend', toggleInventory);
-
         // Quest log toggle (click and touch)
         const questToggle = document.getElementById('quest-toggle');
         const toggleQuest = (e) => {
@@ -434,7 +372,7 @@ class CyberGuardEngine {
             this.currentScene = sceneId;
 
             // Advance the game clock to match this scene's timeline
-            this._applySceneClock(sceneId);
+            // this._applySceneClock(sceneId);
 
             // Load background
             const bgElement = document.getElementById('scene-background');
@@ -669,11 +607,6 @@ class CyberGuardEngine {
             }, this.settings.animSpeed ? ENGINE_CONFIG.SCENE_CHANGE_DELAY : 0);
         }
 
-        // Collect item
-        if (hotspot.item) {
-            this.addToInventory(hotspot.item);
-        }
-
         // Start dialogue
         if (hotspot.dialogue) {
             this.startDialogue(hotspot.dialogue);
@@ -691,75 +624,11 @@ class CyberGuardEngine {
         }
     }
 
-    // Inventory System
-    addToInventory(item) {
-        if (!item || !item.id) {
-            console.error('addToInventory: item must have an id', item);
-            return;
-        }
-        if (!this.inventory.find(i => i.id === item.id)) {
-            this.inventory.push(item);
-            this.updateInventoryUI();
-            this.showNotification(`Added to inventory: ${item.name || item.id}`);
-
-            // Auto-open inventory briefly
-            const inventoryItems = document.getElementById('inventory-items');
-            if (inventoryItems) {
-                inventoryItems.classList.remove('hidden');
-                setTimeout(() => inventoryItems.classList.add('hidden'), ENGINE_CONFIG.INVENTORY_AUTO_CLOSE);
-            }
-        }
-    }
-
-    removeFromInventory(itemId) {
-        this.inventory = this.inventory.filter(i => i.id !== itemId);
-        this.updateInventoryUI();
-    }
-
-    hasItem(itemId) {
-        return this.inventory.some(i => i.id === itemId);
-    }
-
     /** Escape a string for safe insertion into innerHTML. */
     _esc(str) {
         const d = document.createElement('div');
         d.textContent = str ?? '';
         return d.innerHTML;
-    }
-
-    updateInventoryUI() {
-        const container = document.getElementById('inventory-items');
-        if (!container) return;
-        container.innerHTML = '';
-
-        if (this.inventory.length === 0) {
-            container.innerHTML = '<div class="inventory-empty">No items</div>';
-            return;
-        }
-
-        this.inventory.forEach(item => {
-            const element = document.createElement('div');
-            element.className = 'inventory-item';
-            element.innerHTML = `
-                <img src="${this._esc(item.icon)}" alt="${this._esc(item.name)}">
-                <span class="item-name">${this._esc(item.name)}</span>
-            `;
-            element.setAttribute('data-tooltip', item.description || item.name);
-            const useItemHandler = (e) => {
-                e.preventDefault();
-                this.useItem(item);
-            };
-            addInteractionHandler(element, useItemHandler);
-            container.appendChild(element);
-        });
-    }
-
-    useItem(item) {
-        if (item.onUse) {
-            item.onUse(this);
-        } else {
-            this.showNotification(`You look at the ${item.name}.`);
-        }
     }
 
     // Dialogue System
@@ -811,28 +680,6 @@ class CyberGuardEngine {
             // Auto-derive portrait from speaker name if not explicitly set
             const PORTRAIT_MAP = {
                 'cygu': 'assets/images/characters/cygu.svg',
-                'eva': 'assets/images/characters/eva_southpark.svg',
-                'ies': 'assets/images/characters/ies_southpark.svg',
-                'cees bassa': 'assets/images/characters/cees_bassa_southpark.svg',
-                'cees': 'assets/images/characters/cees_bassa_southpark.svg',
-                'volkov': 'assets/images/characters/volkov_southpark.svg',
-                'david prinsloo': 'assets/images/characters/david_prinsloo_southpark.svg',
-                'david': 'assets/images/characters/david_prinsloo_southpark.svg',
-                'kubecka': 'assets/images/characters/kubecka_southpark.svg',
-                'jaap haartsen': 'assets/images/characters/jaap_haartsen_southpark.svg',
-                'jaap': 'assets/images/characters/jaap_haartsen_southpark.svg',
-                'vandeberg': 'assets/images/characters/vandeberg_southpark.svg',
-                // Hackerspace characters
-                'dennis': 'assets/images/characters/hacker_male_2_southpark.svg',
-                'sophie': 'assets/images/characters/hacker_female_1_southpark.svg',
-                'marco': 'assets/images/characters/hacker_male_1_southpark.svg',
-                'kim': 'assets/images/characters/hacker_female_4_southpark.svg',
-                'joris': 'assets/images/characters/hacker_male_3_southpark.svg',
-                'linda': 'assets/images/characters/hacker_female_2_southpark.svg',
-                'pieter': 'assets/images/characters/hacker_male_4_southpark.svg',
-                'aisha': 'assets/images/characters/hacker_female_3_southpark.svg',
-                'wouter': 'assets/images/characters/presenter_male_southpark.svg',
-                'marieke': 'assets/images/characters/presenter_female_southpark.svg',
             };
             const portraitPath = current.portrait ||
                 PORTRAIT_MAP[speaker.toLowerCase()] || '';
@@ -974,165 +821,6 @@ class CyberGuardEngine {
         if (this.voiceManager) {
             this.voiceManager.stop();
         }
-    }
-
-    // ── Hint system ──────────────────────────────────────────────────────────
-
-    /**
-     * Show the next contextual hint spoken by the Narrator voice.
-     * Called via the 💡 Hint button or H key.
-     */
-    showHint() {
-        const hint = this.getNextHint();
-        if (!hint) return;
-        this.startDialogue([{ speaker: 'Cygu', text: '*' + hint + '*' }]);
-    }
-
-    /**
-     * Returns a story-aware hint string based on current game state.
-     * Ordered so the most immediately relevant hint fires first.
-     */
-    getNextHint() {
-        const sp = this.gameState.storyPart;
-        const f = (k) => !!this.getFlag(k);
-        const hour = this.gameState.time ? parseInt(this.gameState.time.split(':')[0], 10) : 8;
-        const day = this.gameState.day || 1;
-
-        // ── Night-time sleep reminder (highest priority) ──────────────────
-        const dayKey = 'slept_day_' + day;
-        if ((hour >= 22 || hour === 0 || hour === 1) && !f(dayKey) && this.currentScene !== 'bedroom') {
-            return 'It is getting late and Ryan is exhausted. Head to the bedroom and get some sleep. Tomorrow will be a long day.';
-        }
-
-        // ── Day 1: Morning ────────────────────────────────────────────────
-        if (sp === 0 || !f('game_started')) {
-            return 'Halo, yang perlu kamu lakukan pertama kali yaitu menonton video edukasi mengenai Phishing dan semacamnya melalui tv.';
-        }
-        // if (!f('made_espresso')) {
-        //     return 'Click on the espresso machine in the kitchen to brew Ryan\'s morning coffee.';
-        // }
-        // if (!f('visited_livingroom')) {
-        //     return 'Coffee made. Go to the living room through the door on the right. Something might be on TV this morning.';
-        // }
-        if (!f('tv_documentary_watched')) {
-            return 'Silakan tonton video edukasi mengenai Phishing dan semacamnya melalui tv.';
-        }
-        if (!f('visited_simulation') || sp < 2) {
-            return 'Halo, sekarang saatnya kamu untuk pergi ke ruang kerja.';
-        }
-        // if (!f('visited_mancave') || sp < 2) {
-        //     return 'Halo, sekarang saatnya kamu untuk pergi ke ruang kerja.';
-        // }
-        if (!f('frequency_tuned') || !f('military_frequency')) {
-            return 'Open the SDR radio receiver in the mancave and scan the frequencies. There is unusual activity on a restricted military band.';
-        }
-        if (!f('sstv_transmission_received')) {
-            return 'Keep monitoring the military frequency. An SSTV transmission is incoming — a slow-scan TV image encoded in radio.';
-        }
-        if (!f('first_message_decoded')) {
-            return 'An SSTV image was received. Open the SSTV decoder and decode the image. There is a hidden message inside.';
-        }
-        if (!f('second_message_decoded')) {
-            return 'A second transmission is expected on the same frequency. Keep monitoring. Someone is making contact via shortwave radio.';
-        }
-        if (!f('sstv_decoded') || !f('sstv_coordinates_known')) {
-            return 'Analyse the decoded SSTV images at the SDR bench. GPS coordinates are embedded in the transmission.';
-        }
-        if (!f('klooster_unlocked') && !f('visited_planboard')) {
-            return 'Check the planboard in the mancave to review what you know. The coordinates point somewhere specific.';
-        }
-        if (!f('klooster_unlocked')) {
-            return 'The coordinates lead to Klooster Ter Apel, a medieval monastery in south Drenthe. The message says 23:00 tonight. Be there.';
-        }
-
-        // ── Day 1: Night drive ────────────────────────────────────────────
-        if (!f('visited_garden')) {
-            return 'It is time to go. Walk through the garden to the car. The Klooster is about an hour\'s drive south.';
-        }
-        if (!f('found_usb_stick') || !f('picked_up_usb')) {
-            return 'You are at the Klooster. Look carefully around your Volvo in the car park. Someone may have left something on the car.';
-        }
-        if (!f('usb_analyzed')) {
-            return 'You found a USB stick taped to your car. Do NOT plug it into any networked machine. Use the air-gapped laptop in the mancave for safety.';
-        }
-
-        // ── Day 2: Morning investigation ──────────────────────────────────
-        if (!f('started_ally_search')) {
-            return 'The schematics show a weapons-grade signal jammer. This is serious. Ryan needs allies. Start reaching out through the mancave comms.';
-        }
-        if (!f('cees_contacted')) {
-            return 'Contact Cees Bassa at ASTRON in Dwingeloo. He works with the Westerbork radio telescope and will recognise the frequencies.';
-        }
-        if (!f('jaap_contacted')) {
-            return 'Contact Jaap Haartsen — the inventor of Bluetooth. His expertise in wireless protocols may be key to understanding the device.';
-        }
-        if (!f('all_allies_contacted') && !f('contacted_allies')) {
-            return 'Keep reaching out to your network. Each contact has a piece of the puzzle. Check the mancave communications panel.';
-        }
-        if (!f('volkov_investigated')) {
-            return 'Investigate Volkov using the darkweb search tools in the mancave. His background connects to the Steckerdoser Heide research history.';
-        }
-        if (!f('contacted_kubecka')) {
-            return 'Jan Kubecka at ASTRON has access to the signal interference logs. Contact him — he may know where these transmissions originate.';
-        }
-        if (!f('eva_contacted')) {
-            return 'You identified Eva Weber — a signals engineer placed inside the German facility. Make secure contact with her via the encrypted channel.';
-        }
-
-        // ── Day 2: Field operations ───────────────────────────────────────
-        if (!f('visited_dwingeloo')) {
-            return 'Drive to the Dwingeloo radio telescope. Someone placed a relay transmitter near the dish to hijack its frequency band.';
-        }
-        if (!f('dwingeloo_transmitter_found')) {
-            return 'Search around the base of the Dwingeloo telescope carefully. The relay transmitter will be small and well camouflaged.';
-        }
-        if (!f('visited_westerbork_memorial')) {
-            return 'Head to the Westerbork Memorial. The Zerfall network has a hidden Bluetooth surveillance node somewhere on the grounds.';
-        }
-        if (!f('westerbork_bt_cracked') || !f('zerfall_network_mapped')) {
-            return 'Inspect the camera installation at Westerbork. Use your Flipper Zero to crack its Bluetooth encryption and map the Zerfall network nodes.';
-        }
-        if (!f('visited_hackerspace')) {
-            return 'Visit Hackerspace Drenthe in Coevorden. The local hacker community may have observed the strange frequency activity.';
-        }
-        if (!f('astron_unlocked') || !f('visited_astron')) {
-            return 'Drive to ASTRON. Cees Bassa is ready to help use the Westerbork Synthesis Radio Telescope to triangulate the signal source.';
-        }
-        if (!f('schematics_verified') || !f('signal_triangulated')) {
-            return 'Work with Cees at ASTRON. Feed the device schematics into the telescope analysis software to pinpoint the transmitter location.';
-        }
-        if (!f('visited_lofar')) {
-            return 'Drive to the LOFAR Superterp at Exloo — the world\'s largest low-frequency radio array. Cees arranged access to verify the coordinates using LOFAR\'s wider baseline. The Volvo is waiting.';
-        }
-
-        // ── Day 2: Infiltration ───────────────────────────────────────────
-        if (!f('facility_unlocked') || !f('drove_to_facility')) {
-            return 'The signal is coming from a research compound at Steckerdoser Heide just across the German border. Drive there tonight. Go dark.';
-        }
-        if (!f('badge_cloned')) {
-            return 'At the facility perimeter, use your Flipper Zero to scan and clone the RFID security badge from a guard. You need it to pass the gate.';
-        }
-        if (!f('entered_facility')) {
-            return 'Badge cloned. Approach the gate carefully and use the cloned credential to enter the facility grounds.';
-        }
-        if (!f('facility_password_solved')) {
-            return 'Inside the facility, find the locked terminal room. Solve the password challenge to gain access to the inner corridors.';
-        }
-        if (!f('laser_corridor_complete')) {
-            return 'Navigate the laser corridor. Analyse the grid frequency first, then use the HackRF to jam the motion sensors. Finally bypass the biometric panel.';
-        }
-        if (!f('data_extracted')) {
-            return 'You are in the server room. Find the Operation Zerfall data partition and extract it. Use the Meshtastic radio to transmit proof to your allies.';
-        }
-
-        // ── Day 3: Aftermath ──────────────────────────────────────────────
-        if (!f('debrief_complete')) {
-            return 'It is over. Get home. Sleep. Tomorrow you debrief with IES and face the consequences of what you found.';
-        }
-        if (!f('epilogue_complete')) {
-            return 'Head to the epilogue scene. Three months have passed. Find out what happened to everyone.';
-        }
-        return 'The story is complete. Explore freely, or start a new game from the menu.';
     }
 
     toggleVoice() {
@@ -1390,11 +1078,6 @@ class CyberGuardEngine {
         this.showNotification(`Misi baru: ${quest.name || quest.id}`);
     }
 
-    // Add item to inventory (shortcut method)
-    addItem(item) {
-        this.addToInventory(item);
-    }
-
     completeQuest(questId) {
         const quest = this.gameState.activeQuests.find(q => q.id === questId);
         if (quest) {
@@ -1582,19 +1265,6 @@ class CyberGuardEngine {
         if (timeEl) timeEl.textContent = this.gameState.time;
     }
 
-    /**
-     * Auto-apply scene clock from SCENE_TIME_MAP (called inside loadScene).
-     * @param {string} sceneId
-     */
-    _applySceneClock(sceneId) {
-        const entry = SCENE_TIME_MAP[sceneId];
-        if (entry) this.setTime(entry.day, entry.time);
-    }
-
-    setStoryPart(part) {
-        this.gameState.storyPart = part;
-    }
-
     // Notifications
     showNotification(message, duration = ENGINE_CONFIG.NOTIFICATION_DURATION) {
         const area = document.getElementById('notification-area');
@@ -1638,7 +1308,6 @@ class CyberGuardEngine {
                 slot: 0,
                 slotLabel: 'Autosave',
                 currentScene: this.currentScene,
-                inventory: this.inventory,
                 gameState: this.gameState,
                 voiceEnabled: this.voiceEnabled,
                 timestamp: new Date().toISOString()
@@ -1661,7 +1330,6 @@ class CyberGuardEngine {
                 slot,
                 slotLabel: slot > 0 ? `Slot ${slot}` : 'Auto',
                 currentScene: this.currentScene,
-                inventory: this.inventory,
                 gameState: this.gameState,
                 voiceEnabled: this.voiceEnabled,
                 timestamp: new Date().toISOString()
@@ -1673,7 +1341,7 @@ class CyberGuardEngine {
                 const label = slot > 0 ? ` (Slot ${slot})` : '';
                 this.showNotification(`Game saved${label}!`);
             }
-            console.log(`[Save] key=${key}, scene=${this.currentScene}, items=${this.inventory.length}, flags=${Object.keys(this.gameState.flags).length}, quests=${this.gameState.activeQuests.length}`);
+            console.log(`[Save] key=${key}, scene=${this.currentScene}, flags=${Object.keys(this.gameState.flags).length}, quests=${this.gameState.activeQuests.length}`);
             return true;
         } catch (err) {
             console.error('Failed to save game:', err);
@@ -1704,9 +1372,6 @@ class CyberGuardEngine {
 
             const data = JSON.parse(raw);
 
-            // --- Inventory ---
-            this.inventory = Array.isArray(data.inventory) ? data.inventory : [];
-
             // --- Game state: merge saved over defaults so new fields get defaults ---
             const defaults = JSON.parse(JSON.stringify(this._defaultGameState));
             this.gameState = { ...defaults, ...data.gameState };
@@ -1724,7 +1389,6 @@ class CyberGuardEngine {
             }
 
             // --- Update all UI ---
-            this.updateInventoryUI();
             this.updateQuestUI();
             const dayEl = document.getElementById('game-day');
             const timeEl = document.getElementById('game-time');
@@ -1737,7 +1401,7 @@ class CyberGuardEngine {
             }
 
             console.log(`[Load] scene=${data.currentScene}, quests=${this.gameState.activeQuests.length}`);
-            // console.log(`[Load] scene=${data.currentScene}, items=${this.inventory.length}, flags=${Object.keys(this.gameState.flags).length}, quests=${this.gameState.activeQuests.length}`);
+            // console.log(`[Load] scene=${data.currentScene}, flags=${Object.keys(this.gameState.flags).length}, quests=${this.gameState.activeQuests.length}`);
             const slotLabel = data.slot > 0 ? ` (Slot ${data.slot})` : '';
             this.showNotification(`Memuat program${slotLabel}...`);
             return true;
@@ -1770,7 +1434,7 @@ class CyberGuardEngine {
                 if (typeof saved.textSpeed === 'number') this.settings.textSpeed = saved.textSpeed;
                 if (typeof saved.animSpeed === 'number') this.settings.animSpeed = saved.animSpeed;
                 if (typeof saved.autoAdvanceDelay === 'number') this.settings.autoAdvanceDelay = saved.autoAdvanceDelay;
-                if (typeof saved.docuPauseDuration === 'number') this.settings.docuPauseDuration = saved.docuPauseDuration;
+                if (typeof saved.materiPauseDuration === 'number') this.settings.materiPauseDuration = saved.materiPauseDuration;
                 if (typeof saved.accessibilityMode === 'boolean') this.settings.accessibilityMode = saved.accessibilityMode;
             }
         } catch (e) {
@@ -1983,7 +1647,7 @@ class CyberGuardEngine {
         const textLabels = { 0: 'Instant', 15: 'Fast', 40: 'Normal', 80: 'Slow' };
         const animLabels = { 0: 'None', 200: 'Fast', 500: 'Normal', 1000: 'Slow' };
         const autoLabels = { 0: 'Manual', 1500: 'Fast', 3000: 'Normal', 5000: 'Slow' };
-        const docuLabels = { 0: 'None', 500: 'Quick', 1500: 'Normal', 3000: 'Relaxed', 5000: 'Slow' };
+        const materiLabels = { 0: 'None', 500: 'Quick', 1500: 'Normal', 3000: 'Relaxed', 5000: 'Slow' };
 
         const labelFor = (map, val) => {
             // Find closest key
@@ -2038,22 +1702,22 @@ class CyberGuardEngine {
                     </div>
 
                     <div class="settings-section">
-                        <h3 class="settings-section-title">Documentary</h3>
+                        <h3 class="settings-section-title">Materi</h3>
 
                         <div class="settings-row">
                             <div class="settings-row__labels">
                                 <span class="settings-row__name">Pause After Speech</span>
-                                <span class="settings-row__value" id="lbl-docu-pause">${labelFor(docuLabels, this.settings.docuPauseDuration)}</span>
+                                <span class="settings-row__value" id="lbl-materi-pause">${labelFor(materiLabels, this.settings.materiPauseDuration)}</span>
                             </div>
                             <div class="settings-row__presets">
-                                <button class="preset-btn${this.settings.docuPauseDuration === 0 ? ' preset-btn--active' : ''}" data-target="docuPauseDuration" data-value="0">None</button>
-                                <button class="preset-btn${this.settings.docuPauseDuration === 500 ? ' preset-btn--active' : ''}" data-target="docuPauseDuration" data-value="500">Quick</button>
-                                <button class="preset-btn${this.settings.docuPauseDuration === 1500 ? ' preset-btn--active' : ''}" data-target="docuPauseDuration" data-value="1500">Normal</button>
-                                <button class="preset-btn${this.settings.docuPauseDuration === 3000 ? ' preset-btn--active' : ''}" data-target="docuPauseDuration" data-value="3000">Relaxed</button>
-                                <button class="preset-btn${this.settings.docuPauseDuration === 5000 ? ' preset-btn--active' : ''}" data-target="docuPauseDuration" data-value="5000">Slow</button>
+                                <button class="preset-btn${this.settings.materiPauseDuration === 0 ? ' preset-btn--active' : ''}" data-target="materiPauseDuration" data-value="0">None</button>
+                                <button class="preset-btn${this.settings.materiPauseDuration === 500 ? ' preset-btn--active' : ''}" data-target="materiPauseDuration" data-value="500">Quick</button>
+                                <button class="preset-btn${this.settings.materiPauseDuration === 1500 ? ' preset-btn--active' : ''}" data-target="materiPauseDuration" data-value="1500">Normal</button>
+                                <button class="preset-btn${this.settings.materiPauseDuration === 3000 ? ' preset-btn--active' : ''}" data-target="materiPauseDuration" data-value="3000">Relaxed</button>
+                                <button class="preset-btn${this.settings.materiPauseDuration === 5000 ? ' preset-btn--active' : ''}" data-target="materiPauseDuration" data-value="5000">Slow</button>
                             </div>
-                            <input class="settings-slider" type="range" id="slider-docu-pause"
-                                min="0" max="6000" step="250" value="${this.settings.docuPauseDuration}">
+                            <input class="settings-slider" type="range" id="slider-materi-pause"
+                                min="0" max="6000" step="250" value="${this.settings.materiPauseDuration}">
                         </div>
                     </div>
 
@@ -2090,7 +1754,7 @@ class CyberGuardEngine {
         const labelMap = {
             'slider-text-speed': { lblId: 'lbl-text-speed', map: textLabels, key: 'textSpeed' },
             'slider-auto-advance': { lblId: 'lbl-auto-advance', map: autoLabels, key: 'autoAdvanceDelay' },
-            'slider-docu-pause': { lblId: 'lbl-docu-pause', map: docuLabels, key: 'docuPauseDuration' },
+            'slider-materi-pause': { lblId: 'lbl-materi-pause', map: materiLabels, key: 'materiPauseDuration' },
             'slider-anim-speed': { lblId: 'lbl-anim-speed', map: animLabels, key: 'animSpeed' },
         };
 
@@ -2154,7 +1818,7 @@ class CyberGuardEngine {
             this.settings.textSpeed = 40;
             this.settings.animSpeed = 500;
             this.settings.autoAdvanceDelay = 0;
-            this.settings.docuPauseDuration = 1500;
+            this.settings.materiPauseDuration = 1500;
             // Reset sliders
             Object.entries(labelMap).forEach(([sliderId, cfg]) => {
                 const slider = modal.querySelector(`#${sliderId}`);
@@ -2247,818 +1911,6 @@ class CyberGuardEngine {
             this._sceneTimeouts.forEach(id => clearTimeout(id));
             this._sceneTimeouts = [];
         }
-    }
-
-    // Debug Panel for Testing
-    toggleDebugPanel() {
-        let panel = document.getElementById('debug-panel');
-        if (panel) {
-            // Remove old panel and recreate with fresh data
-            if (!panel.classList.contains('hidden')) {
-                panel.classList.add('hidden');
-                return;
-            }
-            panel.remove();
-        }
-        panel = this.createDebugPanel();
-        panel.classList.remove('hidden');
-    }
-
-    createDebugPanel() {
-        const _g = this;
-        const f = (name) => _g.getFlag(name);
-        const fb = (name) => {
-            const val = f(name);
-            const cls = val ? 'flag-on' : 'flag-off';
-            const tick = val ? '✓' : '✗';
-            return `<button class="debug-flag-btn ${cls}" data-dbg-action="toggleFlag" data-dbg-flag="${name}">${name}:${tick}</button>`;
-        };
-        const cur = _g.gameState;
-        const panel = document.createElement('div');
-        panel.id = 'debug-panel';
-        panel.className = 'debug-panel';
-
-        // Scene jump helper
-        const sb = (scene, label, extra) => {
-            const active = cur.currentScene === scene ? ' style="background:#00ff88;color:#000;font-weight:bold"' : '';
-            const extraAttr = extra ? ` data-dbg-extra="${extra.replace(/"/g, '&quot;')}"` : '';
-            return `<button data-dbg-action="loadScene" data-dbg-scene="${scene}"${extraAttr}${active}>${label || scene}</button>`;
-        };
-        // Driving scene helper
-        const drv = (dest, scene, label) => {
-            return `<button data-dbg-action="drive" data-dbg-dest="${dest}" data-dbg-scene="${scene}">${label}</button>`;
-        };
-        // Story part indicator
-        const sp = (n) => {
-            const active = cur.storyPart === n;
-            return `<span class="dbg-sp ${active ? 'dbg-sp-active' : ''}" data-dbg-action="setSP" data-dbg-sp="${n}" title="Click to set story part ${n}">SP${n}</span>`;
-        };
-
-        panel.innerHTML = `
-            <div class="debug-header">
-                🛠️ DEBUG TIMELINE — D to close
-                &nbsp;|&nbsp; Scene: <b>${cur.currentScene || 'none'}</b>
-                &nbsp;|&nbsp; Story Part: <b>${cur.storyPart}</b>
-                &nbsp;|&nbsp; Day ${cur.day} ${cur.time || ''}
-                &nbsp;|&nbsp;
-                <button data-dbg-action="autoplay" id="dbg-autoplay-btn" style="background:#00cc66;color:#000;font-weight:bold;padding:2px 8px;border:none;border-radius:3px;cursor:pointer;">▶ Autoplay</button>
-                <button data-dbg-action="stopAutoplay" style="background:#cc3300;color:#fff;font-weight:bold;padding:2px 8px;border:none;border-radius:3px;cursor:pointer;">■ Stop</button>
-            </div>
-            <div class="debug-content">
-
-            <!-- ═══════════ DAY 1 — MONDAY FEB 9 ═══════════ -->
-            <div class="dbg-day">
-                <div class="dbg-day-header">📅 DAY 1 — Monday Feb 9 — Morning</div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">07:27</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('intro', '🎬 Intro')} ${sp(0)} — Ryan wakes, game starts</div>
-                        <div class="dbg-flags">${fb('game_started')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">08:15</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('materiedukasi', '📺 TV Documentary')} — Watch Drenthe documentary</div>
-                        <div class="dbg-flags">${fb('saw_tv_documentary')}${fb('tv_documentary_watched')}${fb('documentary_completed_once')}${fb('post_documentary_reminder_shown')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">09:00</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('mancave', '🖥️ Mancave')} ${sp(2)} — Explore mancave, find SDR radio, tune military frequency</div>
-                        <div class="dbg-flags">
-                            ${fb('visited_mancave')}${fb('frequency_tuned')}${fb('military_frequency')}
-                            ${fb('father_call_count')}${fb('mother_call_count')}${fb('checked_email')}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">11:00</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('sstv_terminal', '📺 SSTV Terminal')} ${sp(3)}${sp(4)}${sp(5)}${sp(6)} — Receive SSTV transmissions, decode two messages, unlock Klooster</div>
-                        <div class="dbg-flags">
-                            ${fb('sstv_transmission_received')}${fb('first_message_decoded')}${fb('second_transmission_ready')}
-                            ${fb('second_message_decoded')}${fb('message_decoded')}${fb('klooster_unlocked')}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="dbg-day">
-                <div class="dbg-day-header">📅 DAY 1 — Monday Feb 9 — Afternoon</div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">16:15</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('sdr_bench', '📡 SDR Bench')} — Decode SSTV image of Ryan's house</div>
-                        <div class="dbg-flags">${fb('visited_sdr_bench')}${fb('sstv_decoded')}${fb('sstv_coordinates_known')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">16:30</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('planboard', '📋 Planboard')} — Review investigation board</div>
-                        <div class="dbg-flags">${fb('visited_planboard')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">16:45</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('videocall', '📹 Video Call')} — Contact IES / allies</div>
-                        <div class="dbg-flags">${fb('visited_videocall')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">17:00</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('garden', '🌳 Garden')} ${sb('garden_back', '🌿 Garden Back')} — Go to car</div>
-                        <div class="dbg-flags">${fb('visited_garden')}${fb('visited_garden_back')}${fb('klooster_unlocked')}</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="dbg-day">
-                <div class="dbg-day-header">📅 DAY 1 — Monday Feb 9 — Night</div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">22:30</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${drv('klooster', 'driving', '🚗 Drive → Klooster')} ${sp(7)} — Night drive to Ter Apel</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">22:55</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('klooster', '⛪ Klooster')} — Medieval monastery, find USB on car</div>
-                        <div class="dbg-flags">${fb('visited_klooster')}${fb('first_klooster_visit')}${fb('checked_courtyard')}${fb('found_usb_stick')}${fb('saw_usb_first_time')}${fb('picked_up_usb')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">23:15</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('car_discovery', '🪑 Bench Discovery')} — Find USB stick taped under monastery bench</div>
-                        <div class="dbg-flags">${fb('found_usb_stick')}${fb('picked_up_usb')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">23:30</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${drv('home', 'driving', '🚗 Drive → Home')} — Return to Compascuum</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">00:15</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('bedroom', '🛏️ Sleep — Bedroom')} — Ryan sleeps until 07:00 Day 2</div>
-                        <div class="dbg-flags">${fb('slept_day_1')}</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ═══════════ DAY 2 — TUESDAY FEB 10 ═══════════ -->
-            <div class="dbg-day">
-                <div class="dbg-day-header">📅 DAY 2 — Tuesday Feb 10 — Morning (Mancave Investigation)</div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">08:30</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('mancave', '🖥️ Mancave — Dilemma')} ${sp(9)} — Acknowledge the threat, begin ally search</div>
-                        <div class="dbg-flags">${fb('started_ally_search')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">09:00</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('mancave', '🖥️ Mancave — Recruit Allies')} ${sp(10)} — Contact Cees, Jaap, David</div>
-                        <div class="dbg-flags">${fb('cees_contacted')}${fb('jaap_contacted')}${fb('david_contacted')}${fb('contacted_allies')}${fb('all_allies_contacted')}${fb('has_flipper_zero')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">10:00</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('mancave', '🖥️ Mancave — Eva Reveal')} ${sp(15)} — Photo analysis, identify Eva Weber</div>
-                        <div class="dbg-flags">${fb('identified_eva')}${fb('eva_contacted')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">10:30</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('mancave', '🖥️ Mancave — Eva Contact')} ${sp(16)} — Establish contact with Eva</div>
-                        <div class="dbg-flags">${fb('eva_contacted')}</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="dbg-day">
-                <div class="dbg-day-header">📅 DAY 2 — Tuesday Feb 10 — Field Operations</div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">11:00</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('dwingeloo', '📡 Dwingeloo Radio Telescope')} — Find relay transmitter, signal log</div>
-                        <div class="dbg-flags">${fb('visited_dwingeloo')}${fb('dwingeloo_broadcast_found')}${fb('dwingeloo_transmitter_found')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">12:00</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('westerbork_memorial', '🏛️ Westerbork Memorial')} — Inspect cameras, crack Bluetooth node</div>
-                        <div class="dbg-flags">${fb('visited_westerbork_memorial')}${fb('westerbork_camera_inspected')}${fb('westerbork_bt_cracked')}${fb('bt_camera_quest_started')}${fb('zerfall_network_mapped')}${fb('zerfall_duration_known')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">13:00</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('hackerspace', '🔧 Hackerspace')} ${sb('hackerspace_classroom', '🎓 Classroom')} — Community presentation</div>
-                        <div class="dbg-flags">${fb('visited_hackerspace')}${fb('visited_hackerspace_classroom')}${fb('classroom_presentation_index')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">15:30</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">
-                            ${drv('astron', 'driving_day', '🚗 Drive → ASTRON')}
-                            ${sb('astron', '🔭 ASTRON / WSRT')} — Verify schematics, triangulate signal
-                        </div>
-                        <div class="dbg-flags">${fb('visited_astron')}${fb('astron_unlocked')}${fb('astron_complete')}${fb('schematics_verified')}${fb('signal_triangulated')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">16:00</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">
-                            ${drv('lofar', 'driving_day', '🚗 Drive → LOFAR')}
-                            ${sb('lofar', '📡 LOFAR Superterp')} — Cross-verify coordinates with wide-baseline array
-                        </div>
-                        <div class="dbg-flags">${fb('visited_lofar')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">17:30</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${drv('home_from_lofar', 'driving_day', '🚗 Drive → Home')} — Return, prepare for infiltration</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="dbg-day">
-                <div class="dbg-day-header">📅 DAY 2 — Tuesday Feb 10 — Night Infiltration</div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">20:00</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('regional_map', '🗺️ Regional Map')} — Plan route to facility</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">21:00</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('drone_hunt', '🛸 Drone Hunt')} — GPS spoofing, eliminate surveillance drones</div>
-                        <div class="dbg-flags">${fb('drone_hunt_started')}${fb('meshtastic_decoy_placed')}${fb('hackrf_ready')}${fb('survived_thermal_scan')}${fb('gps_frequency_set')}${fb('tx_power_set')}${fb('spoof_target_set')}${fb('gps_spoof_executed')}${fb('drones_eliminated')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">21:47</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">
-                            ${drv('facility', 'driving', '🚗 Drive → Facility')} ${sp(17)}
-                            ${sb('facility', '🏭 Facility Gate')} ${sp(18)} — Infiltrate Steckerdoser Heide
-                        </div>
-                        <div class="dbg-flags">${fb('facility_unlocked')}${fb('drove_to_facility')}${fb('entered_facility')}${fb('badge_cloned')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">22:06</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('facility_interior', '🏢 Facility Interior')} — Navigate corridors</div>
-                        <div class="dbg-flags">${fb('facility_interior_entered')}${fb('facility_password_solved')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">22:07</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('laser_corridor', '🔴 Laser Corridor')} — Disable lasers, jam motion sensors, bypass biometric</div>
-                        <div class="dbg-flags">${fb('laser_corridor_entered')}${fb('laser_grid_analysed')}${fb('motion_sensors_analysed')}${fb('biometric_panel_activated')}${fb('ir_frequency_set')}${fb('lasers_disabled')}${fb('jam_frequency_set')}${fb('sensors_jammed')}${fb('biometric_code_entered')}${fb('server_door_unlocked')}${fb('laser_corridor_complete')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">22:08</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('facility_server', '💾 Server Room')} ${sp(19)}${sp(20)} — Extract data, neutralise Operation Zerfall</div>
-                        <div class="dbg-flags">${fb('data_extracted')}${fb('eva_arrived')}${fb('kubecka_arrived')}${fb('discovered_zerfall')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">23:30</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${drv('home', 'driving', '🚗 Drive → Home')} — Escape across the border, return to Compascuum</div>
-                        <div style="font-size:0.75em;color:#aaa;margin-top:2px;">Day rolls into Day 3 past midnight → sleep is slept_day_3 after long_night</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ═══════════ DAY 3 — WEDNESDAY FEB 11 ═══════════ -->
-            <div class="dbg-day">
-                <div class="dbg-day-header">📅 DAY 3 — Wednesday Feb 11 — Long Night &amp; Sleep</div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">01:00</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('long_night', '🌙 Long Night')} — Process the mission, secure the data</div>
-                        <div class="dbg-flags">${fb('visited_long_night')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">03:00</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('bedroom', '🛏️ Sleep — Bedroom')} — Ryan sleeps until 07:00 Day 4</div>
-                        <div class="dbg-flags">${fb('slept_day_3')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">08:00</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('morning_after', '☀️ Morning After')} — Day 4, after sleeping</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">11:00</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('debrief', '📝 Debrief')} — Review with IES</div>
-                        <div class="dbg-flags">${fb('visited_debrief')}${fb('debrief_complete')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">20:00</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('return_to_max', '🎤 Return to IES')} — Hollywood ending</div>
-                        <div class="dbg-flags">${fb('visited_return_to_max')}${fb('return_to_max_complete')}</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ═══════════ EPILOGUE ═══════════ -->
-            <div class="dbg-day">
-                <div class="dbg-day-header">📅 EPILOGUE — May 2026</div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time">14:00</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('epilogue', '🌅 Epilogue')} — 3 months later</div>
-                        <div class="dbg-flags">${fb('visited_epilogue')}${fb('epilogue_complete')}</div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time"></div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row">${sb('credits', '🎬 Credits')} — Roll credits</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ═══════════ TOOLS SECTION ═══════════ -->
-            <div class="dbg-day" style="border-color:#555;">
-                <div class="dbg-day-header" style="color:#ccc;">🧰 Tools &amp; Presets</div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time" style="color:#888;">SP</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row" style="font-size:0.78rem;color:#888;">Story Part: <b style="color:#00ff88">${cur.storyPart}</b> — click to set →
-                            ${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map(n => `<button data-dbg-action="setSP" data-dbg-sp="${n}" ${cur.storyPart === n ? 'style="background:#00ff88;color:#000;font-weight:bold"' : ''} class="dbg-sp-btn">${n}</button>`).join('')}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time" style="color:#888;">🎒</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row" style="font-size:0.78rem;color:#888;">Inventory:</div>
-                        <div>
-                            <button data-dbg-action="giveItem" data-dbg-item="flipper_zero">Flipper Zero</button>
-                            <button data-dbg-action="giveItem" data-dbg-item="meshtastic">Meshtastic</button>
-                            <button data-dbg-action="giveItem" data-dbg-item="usb_stick">USB Stick</button>
-                            <button data-dbg-action="giveItem" data-dbg-item="wifi_pineapple">WiFi Pineapple</button>
-                            <button data-dbg-action="giveItem" data-dbg-item="hackrf">HackRF One</button>
-                            <button data-dbg-action="giveItem" data-dbg-item="night_vision">Night Vision</button>
-                            <button data-dbg-action="giveItem" data-dbg-item="security_badge">Security Badge</button>
-                            <button data-dbg-action="giveItem" data-dbg-item="astron_mesh_radio">Astron Mesh</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time" style="color:#888;">⚡</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row" style="font-size:0.78rem;color:#888;">Quick Presets:</div>
-                        <div>
-                            <button data-dbg-action="kloosterTest">✅ Klooster Test</button>
-                            <button data-dbg-action="preset" data-dbg-preset="unlock_field">✅ Field Ops (SP 8)</button>
-                            <button data-dbg-action="preset" data-dbg-preset="unlock_facility">✅ Facility (SP 12)</button>
-                            <button data-dbg-action="preset" data-dbg-preset="complete_all">✅ ALL Flags True</button>
-                            <button data-dbg-action="preset" data-dbg-preset="reset_all" style="border-color:#ff4444;color:#ff4444">⛔ Reset ALL</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dbg-step">
-                    <div class="dbg-time" style="color:#888;">🧪</div>
-                    <div class="dbg-body">
-                        <div class="dbg-scene-row" style="font-size:0.78rem;color:#888;">Test Tools:</div>
-                        <div>
-                            <button data-dbg-action="testTool" data-dbg-tool="passwordPuzzle">Password Puzzle</button>
-                            <button data-dbg-action="testTool" data-dbg-tool="chatSignal">Signal Chat</button>
-                            <button data-dbg-action="testTool" data-dbg-tool="chatMeshtastic">Meshtastic Chat</button>
-                            <button data-dbg-action="testTool" data-dbg-tool="chatBBS">BBS Terminal</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            </div>
-        `;
-
-        // Delegated event listener — CSP-safe, no inline onclick handlers
-        panel.addEventListener('click', e => {
-            const el = e.target.closest('[data-dbg-action]');
-            if (!el) return;
-            const action = el.dataset.dbgAction;
-            switch (action) {
-                case 'toggleFlag':
-                    _g.debugToggleFlag(el.dataset.dbgFlag);
-                    break;
-                case 'loadScene': {
-                    const extra = el.dataset.dbgExtra;
-                    if (extra) {
-                        // Parse known flag-set pattern: game.setFlag('key','val');
-                        const m = extra.match(/game\.setFlag\('([^']+)','([^']+)'\)/);
-                        if (m) _g.setFlag(m[1], m[2]);
-                    }
-                    _g.loadScene(el.dataset.dbgScene);
-                    _g.toggleDebugPanel();
-                    break;
-                }
-                case 'drive':
-                    _g.setFlag('driving_destination', el.dataset.dbgDest);
-                    _g.loadScene(el.dataset.dbgScene);
-                    _g.toggleDebugPanel();
-                    break;
-                case 'setSP':
-                    _g.debugSetStoryPart(parseInt(el.dataset.dbgSp));
-                    break;
-                case 'autoplay':
-                    _g.debugAutoplay();
-                    break;
-                case 'stopAutoplay':
-                    _g.debugStopAutoplay();
-                    break;
-                case 'giveItem':
-                    _g.giveDebugItem(el.dataset.dbgItem);
-                    break;
-                case 'preset':
-                    _g.debugPreset(el.dataset.dbgPreset);
-                    break;
-                case 'kloosterTest':
-                    _g.setupKloosterTest();
-                    _g.toggleDebugPanel();
-                    break;
-                case 'testTool': {
-                    const tool = el.dataset.dbgTool;
-                    if (tool === 'passwordPuzzle') _g.testPasswordPuzzle();
-                    else if (tool === 'chatSignal') _g.testChatSignal();
-                    else if (tool === 'chatMeshtastic') _g.testChatMeshtastic();
-                    else if (tool === 'chatBBS') _g.testChatBBS();
-                    break;
-                }
-            }
-        });
-
-        // Add CSS (only once)
-        if (!document.getElementById('debug-panel-styles')) {
-            const style = document.createElement('style');
-            style.id = 'debug-panel-styles';
-            style.textContent = `
-                .debug-panel {
-                    position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    background: rgba(0,0,0,0.97);
-                    border: 2px solid #00ff88;
-                    border-radius: 8px;
-                    padding: 20px;
-                    z-index: 9999;
-                    width: 92vw;
-                    max-width: 900px;
-                    max-height: 88vh;
-                    overflow-y: auto;
-                    font-family: 'Courier New', monospace;
-                }
-                .debug-panel.hidden { display: none; }
-                .debug-header {
-                    color: #00ff88;
-                    font-size: 0.9rem;
-                    font-weight: bold;
-                    margin-bottom: 14px;
-                    text-align: center;
-                    border-bottom: 1px solid #00ff88;
-                    padding-bottom: 10px;
-                    position: sticky;
-                    top: -20px;
-                    background: rgba(0,0,0,0.97);
-                    z-index: 1;
-                    padding-top: 4px;
-                }
-                .debug-content { color: #eaeaea; }
-
-                /* Day block */
-                .dbg-day {
-                    border-left: 3px solid #00ff88;
-                    margin: 0 0 16px 12px;
-                    padding-left: 0;
-                }
-                .dbg-day-header {
-                    color: #00ff88;
-                    font-size: 0.85rem;
-                    font-weight: bold;
-                    padding: 6px 12px;
-                    background: rgba(0,255,136,0.06);
-                    border-bottom: 1px solid rgba(0,255,136,0.15);
-                    margin-bottom: 2px;
-                }
-
-                /* Timeline step */
-                .dbg-step {
-                    display: flex;
-                    align-items: flex-start;
-                    padding: 5px 0 5px 0;
-                    border-bottom: 1px solid rgba(255,255,255,0.04);
-                    position: relative;
-                }
-                .dbg-step::before {
-                    content: '';
-                    position: absolute;
-                    left: -2px;
-                    top: 12px;
-                    width: 8px;
-                    height: 8px;
-                    background: #00ff88;
-                    border-radius: 50%;
-                    border: 2px solid #000;
-                    z-index: 1;
-                }
-                .dbg-time {
-                    width: 52px;
-                    min-width: 52px;
-                    color: #ffaa00;
-                    font-size: 0.78rem;
-                    font-weight: bold;
-                    padding: 4px 6px 0 14px;
-                    text-align: right;
-                }
-                .dbg-body {
-                    flex: 1;
-                    padding: 2px 8px;
-                }
-                .dbg-scene-row {
-                    font-size: 0.82rem;
-                    margin-bottom: 3px;
-                }
-                .dbg-flags {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 2px;
-                }
-
-                /* Buttons inside timeline */
-                .dbg-body button, .dbg-scene-row button {
-                    background: #111;
-                    color: #00ff88;
-                    border: 1px solid #00ff88;
-                    padding: 3px 7px;
-                    margin: 1px 2px;
-                    cursor: pointer;
-                    border-radius: 3px;
-                    font-family: 'Courier New', monospace;
-                    font-size: 0.76rem;
-                }
-                .dbg-body button:hover, .dbg-scene-row button:hover {
-                    background: #00ff88;
-                    color: #000;
-                }
-                .dbg-sp-btn {
-                    padding: 2px 5px !important;
-                    font-size: 0.7rem !important;
-                    min-width: 22px;
-                    text-align: center;
-                }
-
-                /* Story part badges */
-                .dbg-sp {
-                    display: inline-block;
-                    background: #1a1a2a;
-                    color: #667;
-                    border: 1px solid #334;
-                    border-radius: 3px;
-                    padding: 1px 4px;
-                    font-size: 0.65rem;
-                    margin: 0 1px;
-                    cursor: pointer;
-                    vertical-align: middle;
-                }
-                .dbg-sp:hover { color: #00ff88; border-color: #00ff88; }
-                .dbg-sp-active {
-                    background: #0a2e1a;
-                    color: #00ff88;
-                    border-color: #00ff88;
-                    font-weight: bold;
-                }
-
-                /* Flag buttons */
-                .debug-flag-btn {
-                    padding: 2px 5px;
-                    margin: 1px;
-                    cursor: pointer;
-                    border-radius: 3px;
-                    font-family: 'Courier New', monospace;
-                    font-size: 0.68rem;
-                    border: 1px solid;
-                }
-                .debug-flag-btn.flag-on {
-                    background: #0a2e1a;
-                    border-color: #00ff88;
-                    color: #00ff88;
-                }
-                .debug-flag-btn.flag-off {
-                    background: #111;
-                    border-color: #333;
-                    color: #444;
-                }
-                .debug-flag-btn:hover { background: #00ff88 !important; color: #000 !important; border-color: #00ff88 !important; }
-
-                /* Scrollbar */
-                .debug-panel::-webkit-scrollbar { width: 6px; }
-                .debug-panel::-webkit-scrollbar-track { background: #111; }
-                .debug-panel::-webkit-scrollbar-thumb { background: #00ff88; border-radius: 3px; }
-            `;
-            document.head.appendChild(style);
-        }
-
-        document.body.appendChild(panel);
-        return panel;
-    }
-
-    debugToggleFlag(name) {
-        this.setFlag(name, !this.getFlag(name));
-        const old = document.getElementById('debug-panel');
-        if (old) old.remove();
-        this.createDebugPanel();
-    }
-
-    /**
-     * Walk through every dbg-step scene button in order,
-     * triggering each with a random 8-12 s delay between steps.
-     * Skips bedroom/driving steps that would steal control from autoplay.
-     */
-    debugAutoplay() {
-        this.debugStopAutoplay(); // clear any previous run
-        const SKIP_SCENES = new Set(['bedroom', 'driving', 'driving_day']);
-        const panel = document.getElementById('debug-panel');
-        if (!panel) return;
-        // For each dbg-step, find the primary scene-jump button:
-        //   • skip drive buttons (onclick includes driving_day / driving / bedroom)
-        //   • take the last remaining button in the row (the sb() scene button)
-        const steps = Array.from(panel.querySelectorAll('.dbg-step .dbg-scene-row'))
-            .map(row => {
-                const candidates = Array.from(row.querySelectorAll('button'))
-                    .filter(btn => {
-                        const oc = btn.getAttribute('onclick') || '';
-                        return !Array.from(SKIP_SCENES).some(s => oc.includes(`'${s}'`));
-                    });
-                return candidates[candidates.length - 1] || null; // prefer last (scene btn)
-            })
-            .filter(Boolean);
-        if (!steps.length) { this.showNotification('Autoplay: no steps found'); return; }
-        this._apIndex = 0;
-        this.showNotification(`▶ Autoplay — ${steps.length} steps`);
-        const next = () => {
-            if (this._apIndex >= steps.length) {
-                this.showNotification('Autoplay complete');
-                this._apTimer = null;
-                return;
-            }
-            const btn = steps[this._apIndex++];
-            btn.click();
-            const delay = 8000 + Math.random() * 4000; // 8-12 s
-            this._apTimer = setTimeout(next, delay);
-        };
-        next();
-    }
-
-    debugStopAutoplay() {
-        if (this._apTimer) {
-            clearTimeout(this._apTimer);
-            this._apTimer = null;
-            this.showNotification('■ Autoplay stopped');
-        }
-    }
-
-    debugSetStoryPart(n) {
-        this.gameState.storyPart = n;
-        this.showNotification(`Story Part set to ${n}`);
-        const old = document.getElementById('debug-panel');
-        if (old) old.remove();
-        this.createDebugPanel();
-    }
-
-    debugPreset(preset) {
-        const ALL_FLAGS = [
-            'game_started', 'saw_tv_documentary',
-            'tv_documentary_watched', 'documentary_completed_once', 'post_documentary_reminder_shown',
-            'visited_livingroom', 'visited_garden', 'visited_mancave', 'visited_sdr_bench',
-            'visited_dwingeloo', 'visited_westerbork_memorial', 'visited_astron', 'visited_lofar', 'visited_planboard', 'visited_hackerspace', 'visited_hackerspace_classroom', 'classroom_presentation_index',
-            'visited_videocall', 'visited_facility', 'visited_debrief', 'visited_epilogue',
-            'dog_interactions', 'pug_interactions', 'fireplace_interactions',
-            'frequency_tuned', 'military_frequency', 'sstv_transmission_received', 'sstv_decoded',
-            'sstv_coordinates_known', 'second_transmission_ready', 'first_message_decoded',
-            'second_message_decoded', 'message_decoded',
-            'klooster_unlocked', 'first_klooster_visit', 'checked_courtyard',
-            'found_usb_stick', 'saw_usb_first_time', 'picked_up_usb',
-            'usb_analyzed', 'viewed_schematics', 'started_ally_search',
-            'volkov_investigated', 'contacted_allies', 'all_allies_contacted', 'checked_email',
-            'cees_contacted', 'jaap_contacted', 'david_contacted', 'contacted_kubecka',
-            'eva_contacted', 'identified_eva', 'has_flipper_zero',
-            'dwingeloo_broadcast_found', 'dwingeloo_transmitter_found',
-            'westerbork_camera_inspected', 'westerbork_bt_cracked', 'bt_camera_quest_started',
-            'zerfall_network_mapped', 'zerfall_duration_known',
-            'astron_unlocked', 'astron_complete', 'schematics_verified', 'signal_triangulated',
-            'facility_unlocked', 'drove_to_facility', 'entered_facility', 'facility_interior_entered',
-            'facility_password_solved', 'badge_cloned', 'data_extracted', 'discovered_zerfall',
-            'eva_arrived', 'kubecka_arrived',
-            'debrief_complete', 'epilogue_complete'
-        ];
-        const FIELD_FLAGS = [
-            'frequency_tuned', 'military_frequency', 'sstv_transmission_received', 'sstv_decoded',
-            'sstv_coordinates_known', 'klooster_unlocked', 'first_klooster_visit', 'found_usb_stick',
-            'picked_up_usb', 'usb_analyzed', 'dwingeloo_broadcast_found',
-            'visited_dwingeloo', 'visited_westerbork_memorial', 'bt_camera_quest_started',
-            'westerbork_bt_cracked', 'zerfall_network_mapped'
-        ];
-        const FACILITY_FLAGS = [
-            ...FIELD_FLAGS,
-            'astron_unlocked', 'astron_complete', 'schematics_verified', 'signal_triangulated', 'visited_astron', 'visited_lofar',
-            'facility_unlocked', 'drove_to_facility'
-        ];
-        if (preset === 'complete_all') {
-            ALL_FLAGS.forEach(fl => this.setFlag(fl, true));
-            this.gameState.storyPart = 18;
-            this.showNotification('All flags set to TRUE, story part 18');
-        } else if (preset === 'reset_all') {
-            ALL_FLAGS.forEach(fl => this.setFlag(fl, false));
-            this.gameState.storyPart = 0;
-            this.showNotification('All flags RESET, story part 0');
-        } else if (preset === 'unlock_field') {
-            FIELD_FLAGS.forEach(fl => this.setFlag(fl, true));
-            this.gameState.storyPart = 8;
-            this.showNotification('Field Ops unlocked — story part 8');
-        } else if (preset === 'unlock_facility') {
-            FACILITY_FLAGS.forEach(fl => this.setFlag(fl, true));
-            this.gameState.storyPart = 12;
-            this.showNotification('Facility unlocked — story part 12');
-        }
-        const old = document.getElementById('debug-panel');
-        if (old) old.remove();
-        this.createDebugPanel();
     }
 
     /**

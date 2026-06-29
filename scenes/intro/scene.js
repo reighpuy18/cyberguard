@@ -1,9 +1,3 @@
-/**
- * Intro Scene – Cinematic Hollywood-style Multi-Act Prologue
- * Full audio-visual experience with Web Audio synthesis, canvas FX,
- * Ken Burns camera, screen shake, lens-flare title reveal, and more.
- */
-
 const IntroScene = {
     id: 'intro',
     name: 'Welcome',

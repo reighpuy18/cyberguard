@@ -983,6 +983,11 @@ body {
 
 /* Smartphone (320px - 480px) */
 @media (max-width: 480px) {
+
+    .hotspot[data-tooltip]:hover::after {
+        font-size: 10px;
+    }
+
     #dialogue-box {
         bottom: 10px;
         width: calc(100% - 20px);
@@ -1487,10 +1492,18 @@ button,
 /* Mobile responsive styles */
 @media (max-width: 768px) {
 
+    #scene-background::before {
+        font-size: 10px;
+     }
+
     /* Increase tap target sizes for mobile */
     .hotspot {
         min-width: 40px;
         min-height: 40px;
+    }
+
+    .hotspot[data-tooltip]:hover::after {
+        font-size: 10px;
     }
 
     /* Dialogue box adjustments */
@@ -1565,9 +1578,9 @@ button,
     }
 
     #quest-list {
-        min-width: 250px;
+        min-width: 200px;
         max-width: calc(100vw - 30px);
-        max-height: 350px;
+        max-height: 300px;
         padding: 12px;
     }
 
@@ -1624,6 +1637,10 @@ button,
     #quest-toggle .label {
         display: none;
     } */
+
+     #scene-background::before {
+        font-size: 10px;
+     }
 
     #inventory-toggle,
     #quest-toggle {

@@ -1,6 +1,6 @@
 const IntroScene = {
     id: 'intro',
-    name: 'Welcome',
+    name: 'Selamat Datang',
     background: 'assets/images/scenes/intro.svg',
     description: 'Intro scene of Cyber Guard.',
     playerStart: { x: 50, y: 85 },

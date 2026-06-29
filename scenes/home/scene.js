@@ -1,8 +1,3 @@
-/**
- * Scene: Home (Kitchen)
- * Starting scene - Ryan's farmhouse kitchen in Compascuum
- */
-
 const HomeScene = {
     id: 'home',
     name: 'Di Ruang Tamu',
@@ -66,7 +61,6 @@ const HomeScene = {
                     game.sceneTimeout(() => {
                         game.loadScene('materiedukasi');
                     }, 6000);
-                    if ((game.gameState.day || 1) === 1 || game.gameState.storyPart < 1) game.setStoryPart(1);
                 } else if (game.accessibilityMode) {
                     // 🎬 Movie mode: auto-pick next unwatched channel
                     if (!game.getFlag('tv_documentary_watched')) {
@@ -241,7 +235,7 @@ const HomeScene = {
                 if (Math.random() < 0.35) scheduleDrip();
             }, 4000 + Math.random() * 4000));
 
-            console.log('[Home] Kitchen ambience started');
+            // console.log('[Home] Kitchen ambience started');
         } catch (e) {
             console.warn('[Home] Ambience failed:', e);
         }
@@ -315,19 +309,6 @@ const HomeScene = {
             game.setFlag('email_fakelogin_sim', false);
         } else {
             return
-        }
-
-        // Guide player after returning from klooster with USB
-        if (game.hasItem('usb_stick') && !game.getFlag('usb_analyzed')) {
-            setTimeout(() => {
-                game.startDialogue([
-                    { speaker: 'Ryan', text: 'Home. Time to check that USB stick.' },
-                    { speaker: 'Ryan', text: 'The air-gapped laptop in the mancave. No network, no risk.' }
-                ]);
-                setTimeout(() => {
-                    game.showNotification('Head to the mancave — use the air-gapped laptop');
-                }, 2000);
-            }, 800);
         }
 
         // Update scene background with CSS class

@@ -1,6 +1,3 @@
-// Game Initialization
-// Extracted from index.html to comply with Content-Security-Policy script-src 'self'
-
 let game = null;
 
 // Loading progress simulation

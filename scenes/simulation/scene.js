@@ -1,6 +1,6 @@
 const SimulationScene = {
   id: 'simulation',
-  name: 'Simulation Center',
+  name: 'Ruang Simulasi',
   background: 'assets/images/scenes/simulation.png',
   playerStart: { x: 48, y: 90 },
   accessibilityPath: [],
@@ -8,6 +8,8 @@ const SimulationScene = {
   idleThoughts: [
     "Need more coffee...",
     "When did I last sleep?",
+    "Belajar apa lagi yaa, hmm...",
+    "Lemme think...",
   ],
 
   hotspots: [

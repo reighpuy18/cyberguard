@@ -13,49 +13,41 @@ class VoiceManager {
         // Try to load voices multiple times
         this.loadVoicesWithRetry();
 
-        // Each character gets a unique voice profile with different preferred voices,
-        // regional accents, pitch and rate to sound as distinct as possible.
-        // Chrome on Linux provides these Google voices:
-        //   Google US English, Google UK English Male, Google UK English Female
-        // We use pitch, rate and voice selection to create distinct characters.
-        // Accent simulation: Dutch/German/Russian accents are approximated via
-        // pitch shifts and rate changes since Web Speech API doesn't support accents.
-
         // Character voice profiles (pitch, rate, voice preference)
         this.characterProfiles = {
             // ── Cygu: low-pitched male, confident pace ──
             'Cygu': {
-                pitch: 0.75, rate: 0.95, lang: 'id-ID',
-                voicePreference: ['Microsoft Andika', 'Indonesian', 'Google Bahasa Indonesia', 'male']
+                pitch: 0.75, rate: 0.95, lang: ['id-ID', 'en-US'],
+                voicePreference: ['Microsoft Andika', 'Indonesian', 'Google Bahasa Indonesia', 'male', 'Microsoft David'],
             },
             "Cygu's Thoughts": {
-                pitch: 0.65, rate: 0.85, lang: 'id-ID',
-                voicePreference: ['Microsoft Andika', 'Indonesian', 'Google Bahasa Indonesia', 'male']
+                pitch: 0.65, rate: 0.85, lang: ['id-ID', 'en-US'],
+                voicePreference: ['Microsoft Andika', 'Indonesian', 'Google Bahasa Indonesia', 'male', 'Microsoft David'],
             },
             'Cygu observes': {
-                pitch: 0.70, rate: 0.88, lang: 'id-ID',
-                voicePreference: ['Microsoft Andika', 'Indonesian', 'Google Bahasa Indonesia', 'male']
+                pitch: 0.70, rate: 0.88, lang: ['id-ID', 'en-US'],
+                voicePreference: ['Microsoft Andika', 'Indonesian', 'Google Bahasa Indonesia', 'male', 'Microsoft David'],
             },
             'Cygu analyzes': {
-                pitch: 0.72, rate: 0.90, lang: 'id-ID',
-                voicePreference: ['Microsoft Andika', 'Indonesian', 'Google Bahasa Indonesia', 'male']
+                pitch: 0.72, rate: 0.90, lang: ['id-ID', 'en-US'],
+                voicePreference: ['Microsoft Andika', 'Indonesian', 'Google Bahasa Indonesia', 'male', 'Microsoft David'],
             },
 
             // ── Documentary narrator: authoritative warm female ──
             'Documentary': {
-                pitch: 1.05, rate: 0.82, lang: 'id-ID',
-                voicePreference: ['Microsoft Andika', 'Indonesian', 'Google Bahasa Indonesia', 'male']
+                pitch: 1.05, rate: 0.82, lang: ['id-ID', 'en-US'],
+                voicePreference: ['Microsoft Andika', 'Indonesian', 'Google Bahasa Indonesia', 'male', 'Microsoft David'],
             },
 
             'Narrator': {
-                pitch: 0.95, rate: 0.78, volume: 0.7, lang: 'id-ID',
-                voicePreference: ['Microsoft Andika', 'Indonesian', 'Google Bahasa Indonesia', 'male']
+                pitch: 0.95, rate: 0.78, volume: 0.7, lang: ['id-ID', 'en-US'],
+                voicePreference: ['Microsoft Andika', 'Indonesian', 'Google Bahasa Indonesia', 'male', 'Microsoft David'],
             },
 
             // ── System: flat robotic computer voice ──
             'System': {
-                pitch: 1.0, rate: 1.2, lang: 'id-ID',
-                voicePreference: ['Microsoft Andika', 'Indonesian', 'Google Bahasa Indonesia', 'male']
+                pitch: 1.0, rate: 1.2, lang: ['id-ID', 'en-US'],
+                voicePreference: ['Microsoft Andika', 'Indonesian', 'Google Bahasa Indonesia', 'male', 'Microsoft David'],
             }
         };
 
@@ -63,8 +55,8 @@ class VoiceManager {
         this.defaultProfile = {
             pitch: 1.0,
             rate: 0.95,
-            voicePreference: ['Microsoft Andika', 'Indonesian', 'Google Bahasa Indonesia', 'male'],
-            lang: 'id-ID'
+            voicePreference: ['Microsoft Andika', 'Indonesian', 'Google Bahasa Indonesia', 'male', 'Microsoft David'],
+            lang: ['id-ID', 'en-US']
         };
     }
 
@@ -81,22 +73,22 @@ class VoiceManager {
                 this.voicesLoaded = true;
                 this.useFallback = false;
 
-                // Count English voices
-                const englishVoices = this.voices.filter(v => v.lang.toLowerCase().startsWith('id'));
+                // Count Indonesia voices
+                const indonesiaVoices = this.voices.filter(v => v.lang.toLowerCase().startsWith('id'));
 
-                // console.log(`✓ Voice system loaded: ${this.voices.length} voices available`);
-                // console.log(`  ID voices: ${englishVoices.length}`);
+                console.log(`✓ Voice system loaded: ${this.voices.length} voices available`);
+                console.log(`  ID voices: ${indonesiaVoices.length}`);
 
-                if (englishVoices.length > 0) {
+                if (indonesiaVoices.length > 0) {
                     // console.log('Available ID voices:');
-                    englishVoices.slice(0, 3).forEach((voice, i) => {
+                    indonesiaVoices.slice(0, 3).forEach((voice, i) => {
                         // console.log(`  ${i + 1}. ${voice.name} (${voice.lang})`);
                     });
-                    if (englishVoices.length > 3) {
-                        // console.log(`  ... and ${englishVoices.length - 3} more`);
+                    if (indonesiaVoices.length > 3) {
+                        // console.log(`  ... and ${indonesiaVoices.length - 3} more`);
                     }
                 } else {
-                    // console.warn('⚠ No English voices available - speech may be in wrong language');
+                    // console.warn('⚠ No Indonesia voices available - speech may be in wrong language');
                 }
             } else {
                 attempts++;
@@ -138,8 +130,8 @@ class VoiceManager {
                     this.voicesLoaded = true;
                     this.useFallback = false;
 
-                    const englishVoices = this.voices.filter(v => v.lang.toLowerCase().startsWith('id'));
-                    // console.log(`✓ Voice system loaded via event: ${this.voices.length} voices (${englishVoices.length} English)`);
+                    const indonesiaVoices = this.voices.filter(v => v.lang.toLowerCase().startsWith('id'));
+                    // console.log(`✓ Voice system loaded via event: ${this.voices.length} voices (${indonesiaVoices.length} Indonesia)`);
                 }
             };
         }
@@ -153,9 +145,9 @@ class VoiceManager {
     getVoiceForCharacter(character) {
         const profile = this.characterProfiles[character] || this.defaultProfile;
 
-        // Filter voices to English only first (en-US, en-GB, etc.)
-        const englishVoices = this.voices.filter(v => v.lang.toLowerCase().startsWith('id'));
-        const searchVoices = englishVoices.length > 0 ? englishVoices : this.voices;
+        // Filter voices to Indonesia only first (id-ID)
+        const indonesiaVoices = this.voices.filter(v => v.lang.toLowerCase().startsWith('id'));
+        const searchVoices = indonesiaVoices.length > 0 ? indonesiaVoices : this.voices;
 
         // Try to find a matching voice from preferred list
         for (const pref of profile.voicePreference) {
@@ -169,27 +161,18 @@ class VoiceManager {
             );
             if (voice) return { voice, profile };
 
-            // Try gender match with English voices
+            // Try gender match with Indonesia voices
             if (pref === 'male' || pref === 'female') {
                 voice = searchVoices.find(v => {
                     const nameLower = v.name.toLowerCase();
                     if (pref === 'female') {
                         return nameLower.includes('female') ||
                             nameLower.includes('zira') ||
-                            nameLower.includes('samantha') ||
-                            nameLower.includes('karen') ||
-                            nameLower.includes('moira') ||
-                            nameLower.includes('fiona') ||
-                            nameLower.includes('victoria') ||
-                            nameLower.includes('kate');
+                            nameLower.includes('samantha');
                     } else {
                         return nameLower.includes('male') ||
                             nameLower.includes('david') ||
-                            nameLower.includes('daniel') ||
-                            nameLower.includes('alex') ||
-                            nameLower.includes('james') ||
-                            nameLower.includes('mark') ||
-                            nameLower.includes('tom');
+                            nameLower.includes('andika');
                     }
                 });
                 if (voice) return { voice, profile };
@@ -200,19 +183,19 @@ class VoiceManager {
         let voice = searchVoices.find(v => v.lang.startsWith(profile.lang));
         if (voice) return { voice, profile };
 
-        // Try to match by language family (en-* for English)
+        // Try to match by language family (en-* for Indonesia)
         voice = searchVoices.find(v => v.lang.startsWith(profile.lang.split('-')[0]));
         if (voice) return { voice, profile };
 
-        // Fall back to first English voice
-        if (englishVoices.length > 0) {
-            console.warn(`No matching voice for ${character}, using first English voice: ${englishVoices[0].name}`);
-            return { voice: englishVoices[0], profile };
+        // Fall back to first Indonesia voice
+        if (indonesiaVoices.length > 0) {
+            console.warn(`No matching voice for ${character}, using first Indonesia voice: ${indonesiaVoices[0].name}`);
+            return { voice: indonesiaVoices[0], profile };
         }
 
         // Last resort: use first available voice (but warn about language mismatch)
         if (this.voices.length > 0) {
-            console.warn(`No English voice found! Using ${this.voices[0].name} (${this.voices[0].lang}) - may sound wrong`);
+            console.warn(`No Indonesia voice found! Using ${this.voices[0].name} (${this.voices[0].lang}) - may sound wrong`);
             return { voice: this.voices[0], profile };
         }
 
@@ -269,7 +252,7 @@ class VoiceManager {
                 utterance.voice = voice;
                 utterance.lang = voice.lang; // Explicitly set language from voice
             } else {
-                // No voice available, set English as default
+                // No voice available, set Indonesia as default
                 utterance.lang = 'id-ID';
             }
 
@@ -484,17 +467,17 @@ class VoiceManager {
         if (this.voices.length > 0) {
             console.log('📢 Available Voices:');
 
-            // Show English voices first
-            const englishVoices = this.voices.filter(v => v.lang.toLowerCase().startsWith('id'));
+            // Show Indonesia voices first
+            const indonesiaVoices = this.voices.filter(v => v.lang.toLowerCase().startsWith('id'));
             const otherVoices = this.voices.filter(v => !v.lang.toLowerCase().startsWith('id'));
 
-            if (englishVoices.length > 0) {
-                console.log(`\n  ✓ ID Voices (${englishVoices.length}):`);
-                englishVoices.forEach((voice, i) => {
+            if (indonesiaVoices.length > 0) {
+                console.log(`\n  ✓ ID Voices (${indonesiaVoices.length}):`);
+                indonesiaVoices.forEach((voice, i) => {
                     console.log(`    ${i + 1}. ${voice.name} (${voice.lang}) ${voice.default ? '[DEFAULT]' : ''}`);
                 });
             } else {
-                console.warn('  ⚠ No English voices found!');
+                console.warn('  ⚠ No ID voices found!');
             }
 
             if (otherVoices.length > 0) {
@@ -540,12 +523,12 @@ const unlockVoice = () => {
             window.voiceManager.voicesLoaded = true;
             window.voiceManager.useFallback = false;
 
-            const englishVoices = voices.filter(v => v.lang.toLowerCase().startsWith('id'));
-            // console.log(`✓ Voice system unlocked: ${voices.length} voices (${englishVoices.length} English)`);
+            const indonesiaVoices = voices.filter(v => v.lang.toLowerCase().startsWith('id'));
+            console.log(`✓ Voice system unlocked: ${voices.length} voices (${indonesiaVoices.length} Indonesian)`);
 
             // Update notification
             if (window.game) {
-                if (englishVoices.length > 0) {
+                if (indonesiaVoices.length > 0) {
                     window.game.showNotification('Mode 🔊TTS aktif!');
                 } else {
                     window.game.showNotification('⚠ Mode TTS sedang aktif.');
